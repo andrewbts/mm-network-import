@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+    http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<groupId>edu.berkeley.path</groupId>
+	<version>0.1-SNAPSHOT</version>
+	<artifactId>mm-network-import</artifactId>
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<build>		
+
+		
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>edu.berkeley.path</groupId>
+			<artifactId>CORE</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>edu.berkeley.path</groupId>
+			<artifactId>NETCONFIG</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>edu.berkeley.path</groupId>
+			<artifactId>HIGHWAYCOMMON</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>edu.berkeley.path</groupId>
+			<artifactId>MATRIX</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>edu.berkeley.path</groupId>
+			<artifactId>model-base</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>edu.berkeley.path</groupId>
+			<artifactId>model-mock</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>edu.berkeley.path</groupId>
+			<artifactId>model-elements</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>2.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.joda</groupId>
+			<artifactId>joda-convert</artifactId>
+			<version>1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.uncommons.maths</groupId>
+			<artifactId>uncommons-maths</artifactId>
+			<version>1.2.1</version>
+			<!-- note: this is an older version, but without broken dep on jfreechart-1.0.8 -->
+		</dependency>
+		<dependency>
+			<groupId>org.jblas</groupId>
+			<artifactId>jblas</artifactId>
+			<version>1.2.1</version>
+		</dependency>
+	</dependencies>
+
+</project>
