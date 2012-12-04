@@ -27,13 +27,13 @@
 package edu.berkeley.path.mmnetworkimport;
 
 /**
- * 
+ * Main class for Mobile Millenium -> modelElements network importer
  * @author amoylan
  */
 public class MMNetworkImport {
 
 	/**
-	 * Main entry point: Script network import operations here as required.
+	 * Entry point: Script MM network import operations here and launch app.
 	 * E.g., instantiate an ImportedNetwork, then serialize its various
 	 * modelElements members. 
 	 */
