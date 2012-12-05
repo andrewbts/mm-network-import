@@ -26,6 +26,11 @@
 
 package edu.berkeley.path.mmnetworkimport;
 
+import netconfig.NetconfigException;
+import netconfig.Network;
+import core.DatabaseException;
+import core.DatabaseReader;
+import core.Monitor;
 import edu.berkeley.path.model_elements.*;
 
 /**
@@ -43,14 +48,26 @@ public class ImportedNetwork {
 	/**
 	 * Import network corresponding to the specified MM nid.
 	 * @param mm_nid MM network table ID
+	 * @throws NetconfigException 
+	 * @throws DatabaseException 
 	 */
-	public ImportedNetwork(int mm_nid) {
+	public ImportedNetwork(int mm_nid) throws DatabaseException, NetconfigException {
+		
 		network = null;
 		fundamentalDiagramMap = null;
 		splitRatioMap = null;
 		originDemandMap = null;
 		
 		// TODO: import network
+		
+		netconfig.Network mmnetwork = 
+			new netconfig.Network(
+					new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm"), 
+					Network.NetworkType.MODEL_GRAPH, 
+					mm_nid); 		
+		
+		Monitor.out(mmnetwork.getLinks().length);
+		
 	}
 
 	/**

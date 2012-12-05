@@ -26,6 +26,9 @@
 
 package edu.berkeley.path.mmnetworkimport;
 
+import netconfig.NetconfigException;
+import core.DatabaseException;
+
 /**
  * Main class for Mobile Millenium -> modelElements network importer
  * @author amoylan
@@ -36,8 +39,10 @@ public class MMNetworkImport {
 	 * Entry point: Script MM network import operations here and launch app.
 	 * E.g., instantiate an ImportedNetwork, then serialize its various
 	 * modelElements members. 
+	 * @throws NetconfigException 
+	 * @throws DatabaseException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws DatabaseException, NetconfigException {
 				
 		ImportedNetwork network = new ImportedNetwork(28);
 		
