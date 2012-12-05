@@ -26,8 +26,9 @@
 
 package edu.berkeley.path.mmnetworkimport;
 
+import java.util.*;
+
 import netconfig.NetconfigException;
-import netconfig.Network;
 import core.DatabaseException;
 import core.DatabaseReader;
 import core.Monitor;
@@ -53,21 +54,96 @@ public class ImportedNetwork {
 	 */
 	public ImportedNetwork(int mm_nid) throws DatabaseException, NetconfigException {
 		
-		network = null;
 		fundamentalDiagramMap = null;
 		splitRatioMap = null;
 		originDemandMap = null;
 		
-		// TODO: import network
+		// connect via localhost (change as needed)
+		DatabaseReader db = new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm");
 		
+		// load Mobile Millenium network using netconfig library
 		netconfig.Network mmnetwork = 
-			new netconfig.Network(
-					new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm"), 
-					Network.NetworkType.MODEL_GRAPH, 
-					mm_nid); 		
+			new netconfig.Network(db, netconfig.Network.NetworkType.MODEL_GRAPH, mm_nid); 		
 		
-		Monitor.out(mmnetwork.getLinks().length);
+		Monitor.out("");
+		Monitor.out("Importing nid " + mm_nid + " with " + mmnetwork.getLinks().length + 
+				" links and " + mmnetwork.getNodes().length + " nodes to modelElements format ...");
 		
+		// import nodes
+		List<Node> nodes = new ArrayList<Node>();
+		int maxNodeId = 0;
+		Map<netconfig.ModelGraphNode, Node> nodeMap = new HashMap<netconfig.ModelGraphNode, Node>();
+		for (netconfig.ModelGraphNode mmnode : mmnetwork.getNodes()) {
+			Node node = new Node();
+			node.setId((long) mmnode.id);
+			maxNodeId = Math.max(maxNodeId, mmnode.id);
+			node.setType("Highway");
+			node.setName(Integer.toString(mmnode.id));
+			nodeMap.put(mmnode, node);
+		}
+		
+		// generate unique new node IDs as needed
+		int uniqueNodeId = maxNodeId + 1;
+		
+		// import links, treating each MM cell as a separate link
+		List<Link> links = new ArrayList<Link>();
+		//Map<netconfig.ModelGraphLink, Link> linkMap = new HashMap<netconfig.ModelGraphLink, Link>();
+		for (netconfig.ModelGraphLink mmlink : mmnetwork.getLinks()) {
+			Node startNode = nodeMap.get(mmlink.startNode);
+			Node endNode;
+			Link link;
+			int linkid = mmlink.id * 100; // space out to get unique link ids
+			
+			// step through the cells inserting one link per cell, and interior nodes in between 
+			int cellCount = mmlink.getNbCells();
+			double cellLength = mmlink.getLength() / mmlink.getNbCells();
+			int speedLimit = Math.round(mmlink.getAverageSpeedLimit()); // TODO: why integer?
+			for (int i = 0; i < cellCount; ++i, ++linkid) {
+								
+				if (i == cellCount - 1) {
+					// final cell
+					endNode = nodeMap.get(mmlink.endNode);
+				}
+				else {									
+					// new intermediate node
+					endNode = new Node();
+					endNode.setId((long) uniqueNodeId++);
+					endNode.setName(Integer.toString(uniqueNodeId));
+					endNode.setType("Highway");
+					nodes.add(endNode);
+				}
+				
+				link = new Link();
+				link.setBegin(startNode);
+				link.setEnd(endNode);
+				link.setId((long) linkid);
+				link.setDetailLevel(0); // TODO: what is this?
+				link.setLength(cellLength);
+				link.setName(Integer.toString(linkid));
+				link.setSpeedLimit(speedLimit); // TODO: why integer?
+				double offset = (i + 0.5d) * cellLength; // use center of this cell as the offset
+				link.setLaneCount((double) mmlink.getNumLanesAtOffset((float) offset));
+				link.setType("?"); // TODO: what are valid types?
+				link.setLaneOffset(0);
+				
+				links.add(link);
+				
+				startNode = endNode;								
+			}						
+		}
+				
+		// TODO: assign integer IDs (and names) to all nodes that don't have one yet
+		
+		
+		network = new Network();
+		network.setName("MM nid " + Integer.toString(mm_nid));
+		network.setDescription(
+				"Mobile Millienium network " + Integer.toString(mm_nid) + 
+				", imported from PostgreSQL by mmnetworkimport tool.");
+		network.setLinkList(links);		
+		network.setNodeList(nodes);		
+		
+		db.close();		
 	}
 
 	/**
