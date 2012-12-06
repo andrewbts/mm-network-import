@@ -54,7 +54,6 @@ public class ImportedNetwork {
 	 */
 	public ImportedNetwork(int mm_nid) throws DatabaseException, NetconfigException {
 		
-		fundamentalDiagramMap = null;
 		splitRatioMap = null;
 		
 		// connect via localhost (change as needed)
@@ -85,9 +84,10 @@ public class ImportedNetwork {
 		// generate unique new node IDs as needed
 		int uniqueNodeId = maxNodeId;
 		
-		// import links, treating each MM cell as a separate link
+		// import links, treating each MM cell as a separate link, and generating fundamental diagram map entries
 		List<Link> links = new ArrayList<Link>();
 		int maxLinkId = 0;
+		Map<String, FD> linkFundamentalDiagramMap = new HashMap<String, FD>();
 		//Map<netconfig.ModelGraphLink, Link> linkMap = new HashMap<netconfig.ModelGraphLink, Link>();
 		for (netconfig.ModelGraphLink mmlink : mmnetwork.getLinks()) {
 			Node startNode = nodeMap.get(mmlink.startNode);
@@ -114,6 +114,7 @@ public class ImportedNetwork {
 					nodes.add(endNode);
 				}
 				
+				// create link
 				link = new Link();
 				link.setBegin(startNode);
 				link.setEnd(endNode);
@@ -130,6 +131,12 @@ public class ImportedNetwork {
 								
 				links.add(link);
 				
+				// create fundamental diagram map entry
+				FD fd = new FD();
+				fd.setJamDensity(0.124300808 * link.getLaneCount()); // hard coded value from MM
+				// TODO: remaining fields
+				
+				
 				startNode = endNode;								
 			}						
 		}
@@ -143,8 +150,6 @@ public class ImportedNetwork {
 		int uniqueLinkId = maxLinkId;
 		
 		// import sources as origin links, and import their capacity into a demand map		
-		List<Link> sourceLinks = new ArrayList<Link>();
-		List<Node> sourceNodes = new ArrayList<Node>();
 		Map<String, Map<String, Double>> originDemandFlowMap = new HashMap<String, Map<String, Double>>();
 		for (netconfig.TrafficFlowSource mmsource : mmnetwork.getTrafficFlowSources()) {
 			// terminal source node
@@ -153,7 +158,7 @@ public class ImportedNetwork {
 			originNode.setName(Integer.toString(uniqueNodeId));
 			originNode.setType("Terminal");
 			
-			sourceNodes.add(originNode);
+			nodes.add(originNode);
 			
 			// origin link
 			Link originLink = new Link();
@@ -169,23 +174,58 @@ public class ImportedNetwork {
 			originLink.setSpeedLimit(0); // ignored
 			originLink.setType("?"); // TODO: what are valid types?	
 			
-			sourceLinks.add(originLink);
+			links.add(originLink);
 			
 			// demand map entry
 			Map<String, Double> vehicleTypeMap = new HashMap<String, Double>();
 			vehicleTypeMap.put("1", (double) mmsource.capacity);
 			originDemandFlowMap.put(Integer.toString(uniqueLinkId), vehicleTypeMap);
 		}
-		
+						
+		int added = mmnetwork.getTrafficFlowSources().length;
 		Monitor.out(
-				"Converted " + mmnetwork.getTrafficFlowSources().length + " MM sources into " +
-				sourceLinks.size() + " origin links, " + 
-				sourceNodes.size() + " terminal source nodes, and " +
-				originDemandFlowMap.size() + " origin demand map entries ...");
+				"Converted " + added + " MM sources into " +
+				added + " origin links, " + 
+				added + " terminal source nodes, and " +
+				added + " origin demand map entries ...");				
 		
-		links.addAll(sourceLinks);
-		nodes.addAll(sourceNodes);		
-		
+		// import sinks as links and terminal nodes, and import their capacity into fundamental diagram map		
+		for (netconfig.TrafficFlowSink mmsink : mmnetwork.getTrafficFlowSinks()) {
+			// terminal end node
+			Node terminalNode = new Node();
+			terminalNode.setId((long) ++uniqueNodeId);
+			terminalNode.setName(Integer.toString(uniqueNodeId));
+			terminalNode.setType("Terminal");
+			
+			nodes.add(terminalNode);
+			
+			// sink link
+			Link sinkLink = new Link();
+			Node fromNode = nodeMap.get(mmsink.node);
+			sinkLink.setBegin(fromNode);			
+			sinkLink.setEnd(terminalNode);						
+			sinkLink.setId((long) ++uniqueLinkId);
+			sinkLink.setName(Integer.toString(uniqueLinkId));
+			sinkLink.setLaneCount(1d); // arbitrary choice
+			sinkLink.setLaneOffset(0); // per alex
+			sinkLink.setDetailLevel(0); // TODO: what is this?
+			sinkLink.setLength(100d); // arbitrary choice			
+			sinkLink.setSpeedLimit(20); // arbitrary choice
+			sinkLink.setType("?"); // TODO: what are valid types?	
+			
+			links.add(sinkLink);
+			
+			// fundamental diagram map entry
+			// TODO
+		}
+				
+		added = mmnetwork.getTrafficFlowSinks().length;
+		Monitor.out(
+				"Converted " + added + " MM sinks into " +
+				added + " sink links, " + 
+				added + " terminal nodes, and " +
+				added + " fundamental diagram map entries ...");
+			
 		// create final model-elements objects
 		
 		network = new Network();
@@ -195,9 +235,13 @@ public class ImportedNetwork {
 				", imported from PostgreSQL by mm-network-import tool.");
 		network.setLinkList(links);		
 		network.setNodeList(nodes);		
+		network.resolveReferences();
 		
 		originDemandMap = new DemandMap();
 		originDemandMap.setFlowMap(originDemandFlowMap);
+		
+		fundamentalDiagramMap = new FDMap();
+		fundamentalDiagramMap.setFdMap(linkFundamentalDiagramMap);
 				
 		db.close();		
 	}
