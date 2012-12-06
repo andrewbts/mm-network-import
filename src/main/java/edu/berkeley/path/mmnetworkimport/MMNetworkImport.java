@@ -28,6 +28,7 @@ package edu.berkeley.path.mmnetworkimport;
 
 import netconfig.NetconfigException;
 import core.DatabaseException;
+import core.DatabaseReader;
 
 /**
  * Main class for Mobile Millenium -> modelElements network importer
@@ -44,11 +45,14 @@ public class MMNetworkImport {
 	 */
 	public static void main(String[] args) throws DatabaseException, NetconfigException {
 		
-		int nid = 28, cid = 1;
+		// change these as needed
+		int nid = 28, cid = 1; // MM network and config IDs
+		DatabaseReader db = new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm");
 				
-		ImportedNetwork network = new ImportedNetwork(nid, cid);
+		ImportedNetwork network = new ImportedNetwork(nid, cid, db);
 		
 		network.getNetwork();
+		// etc
 		
 	}
 
