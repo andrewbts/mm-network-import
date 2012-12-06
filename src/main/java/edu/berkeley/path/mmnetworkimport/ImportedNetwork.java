@@ -56,7 +56,6 @@ public class ImportedNetwork {
 		
 		fundamentalDiagramMap = null;
 		splitRatioMap = null;
-		originDemandMap = null;
 		
 		// connect via localhost (change as needed)
 		DatabaseReader db = new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm");
@@ -66,8 +65,7 @@ public class ImportedNetwork {
 			new netconfig.Network(db, netconfig.Network.NetworkType.MODEL_GRAPH, mm_nid); 		
 		
 		Monitor.out("");
-		Monitor.out("Importing nid " + mm_nid + " with " + mmnetwork.getLinks().length + 
-				" links and " + mmnetwork.getNodes().length + " nodes to modelElements format ...");
+		Monitor.out("Importing MM nid " + mm_nid + " to model-elements format ...");
 		
 		// import nodes
 		List<Node> nodes = new ArrayList<Node>();
@@ -79,14 +77,17 @@ public class ImportedNetwork {
 			maxNodeId = Math.max(maxNodeId, mmnode.id);
 			node.setType("Highway");
 			node.setName(Integer.toString(mmnode.id));
+			
 			nodeMap.put(mmnode, node);
+			nodes.add(node);
 		}
 		
 		// generate unique new node IDs as needed
-		int uniqueNodeId = maxNodeId + 1;
+		int uniqueNodeId = maxNodeId;
 		
 		// import links, treating each MM cell as a separate link
 		List<Link> links = new ArrayList<Link>();
+		int maxLinkId = 0;
 		//Map<netconfig.ModelGraphLink, Link> linkMap = new HashMap<netconfig.ModelGraphLink, Link>();
 		for (netconfig.ModelGraphLink mmlink : mmnetwork.getLinks()) {
 			Node startNode = nodeMap.get(mmlink.startNode);
@@ -107,7 +108,7 @@ public class ImportedNetwork {
 				else {									
 					// new intermediate node
 					endNode = new Node();
-					endNode.setId((long) uniqueNodeId++);
+					endNode.setId((long) ++uniqueNodeId);
 					endNode.setName(Integer.toString(uniqueNodeId));
 					endNode.setType("Highway");
 					nodes.add(endNode);
@@ -117,32 +118,87 @@ public class ImportedNetwork {
 				link.setBegin(startNode);
 				link.setEnd(endNode);
 				link.setId((long) linkid);
-				link.setDetailLevel(0); // TODO: what is this?
-				link.setLength(cellLength);
+				maxLinkId = Math.max(maxLinkId, linkid);
 				link.setName(Integer.toString(linkid));
-				link.setSpeedLimit(speedLimit); // TODO: why integer?
-				double offset = (i + 0.5d) * cellLength; // use center of this cell as the offset
-				link.setLaneCount((double) mmlink.getNumLanesAtOffset((float) offset));
+				double cellCenterOffset = (i + 0.5d) * cellLength; // use center of this cell as the offset to estimate lane count
+				link.setLaneCount((double) mmlink.getNumLanesAtOffset((float) cellCenterOffset));
+				link.setLaneOffset(0); // per alex
+				link.setDetailLevel(0); // TODO: what is this?
+				link.setLength(cellLength);				
+				link.setSpeedLimit(speedLimit); // TODO: why integer?								
 				link.setType("?"); // TODO: what are valid types?
-				link.setLaneOffset(0);
-				
+								
 				links.add(link);
 				
 				startNode = endNode;								
 			}						
 		}
-				
-		// TODO: assign integer IDs (and names) to all nodes that don't have one yet
 		
+		Monitor.out(
+				"Converted " + mmnetwork.getLinks().length + " MM links and " + 
+				mmnetwork.getNodes().length + " MM nodes into " + links.size() +
+				" links and " + nodes.size() + " nodes ...");
+		
+		// generate unique new link IDs as needed
+		int uniqueLinkId = maxLinkId;
+		
+		// import sources as origin links, and import their capacity into a demand map		
+		List<Link> sourceLinks = new ArrayList<Link>();
+		List<Node> sourceNodes = new ArrayList<Node>();
+		Map<String, Map<String, Double>> originDemandFlowMap = new HashMap<String, Map<String, Double>>();
+		for (netconfig.TrafficFlowSource mmsource : mmnetwork.getTrafficFlowSources()) {
+			// terminal source node
+			Node originNode = new Node();
+			originNode.setId((long) ++uniqueNodeId);
+			originNode.setName(Integer.toString(uniqueNodeId));
+			originNode.setType("Terminal");
+			
+			sourceNodes.add(originNode);
+			
+			// origin link
+			Link originLink = new Link();
+			originLink.setBegin(originNode);
+			Node toNode = nodeMap.get(mmsource.node);
+			originLink.setEnd(toNode);
+			originLink.setId((long) ++uniqueLinkId);
+			originLink.setName(Integer.toString(uniqueLinkId));
+			originLink.setLaneCount(0d); // ignored
+			originLink.setLaneOffset(0); // per alex
+			originLink.setDetailLevel(0); // TODO: what is this?
+			originLink.setLength(0d); // ignored			
+			originLink.setSpeedLimit(0); // ignored
+			originLink.setType("?"); // TODO: what are valid types?	
+			
+			sourceLinks.add(originLink);
+			
+			// demand map entry
+			Map<String, Double> vehicleTypeMap = new HashMap<String, Double>();
+			vehicleTypeMap.put("1", (double) mmsource.capacity);
+			originDemandFlowMap.put(Integer.toString(uniqueLinkId), vehicleTypeMap);
+		}
+		
+		Monitor.out(
+				"Converted " + mmnetwork.getTrafficFlowSources().length + " MM sources into " +
+				sourceLinks.size() + " origin links, " + 
+				sourceNodes.size() + " terminal source nodes, and " +
+				originDemandFlowMap.size() + " origin demand map entries ...");
+		
+		links.addAll(sourceLinks);
+		nodes.addAll(sourceNodes);		
+		
+		// create final model-elements objects
 		
 		network = new Network();
 		network.setName("MM nid " + Integer.toString(mm_nid));
 		network.setDescription(
-				"Mobile Millienium network " + Integer.toString(mm_nid) + 
-				", imported from PostgreSQL by mmnetworkimport tool.");
+				"Mobile Millenium network " + Integer.toString(mm_nid) + 
+				", imported from PostgreSQL by mm-network-import tool.");
 		network.setLinkList(links);		
 		network.setNodeList(nodes);		
 		
+		originDemandMap = new DemandMap();
+		originDemandMap.setFlowMap(originDemandFlowMap);
+				
 		db.close();		
 	}
 
