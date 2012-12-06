@@ -43,8 +43,10 @@ public class MMNetworkImport {
 	 * @throws DatabaseException 
 	 */
 	public static void main(String[] args) throws DatabaseException, NetconfigException {
+		
+		int nid = 28, cid = 1;
 				
-		ImportedNetwork network = new ImportedNetwork(28);
+		ImportedNetwork network = new ImportedNetwork(nid, cid);
 		
 		network.getNetwork();
 		
