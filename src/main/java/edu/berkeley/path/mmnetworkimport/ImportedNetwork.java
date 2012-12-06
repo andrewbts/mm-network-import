@@ -28,10 +28,16 @@ package edu.berkeley.path.mmnetworkimport;
 
 import java.util.*;
 
+import calibration.LinkFluxFuncParams;
+import celltransmissionmodel.velocity.VelocityJunctionSolver;
+
 import netconfig.NetconfigException;
+import parameters.ConfigStore;
+
 import core.DatabaseException;
 import core.DatabaseReader;
 import core.Monitor;
+import datatypes.State;
 import edu.berkeley.path.model_elements.*;
 
 /**
@@ -49,19 +55,17 @@ public class ImportedNetwork {
 	/**
 	 * Import network corresponding to the specified MM nid.
 	 * @param mm_nid MM network table ID
+	 * @param mm_cid MM configuration ID
 	 * @throws NetconfigException 
 	 * @throws DatabaseException 
 	 */
-	public ImportedNetwork(int mm_nid) throws DatabaseException, NetconfigException {
-		
-		splitRatioMap = null;
-		
-		// connect via localhost (change as needed)
-		DatabaseReader db = new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm");
+	public ImportedNetwork(int mm_nid, int mm_cid, DatabaseReader db) throws DatabaseException, NetconfigException {						
 		
 		// load Mobile Millenium network using netconfig library
 		netconfig.Network mmnetwork = 
 			new netconfig.Network(db, netconfig.Network.NetworkType.MODEL_GRAPH, mm_nid); 		
+		
+		State.Parameters mmparameters = ConfigStore.getParameters(mmnetwork, mm_cid);
 		
 		Monitor.out("");
 		Monitor.out("Importing MM nid " + mm_nid + " to model-elements format ...");
@@ -74,7 +78,7 @@ public class ImportedNetwork {
 			Node node = new Node();
 			node.setId((long) mmnode.id);
 			maxNodeId = Math.max(maxNodeId, mmnode.id);
-			node.setType("Highway");
+			node.setType("Freeway");
 			node.setName(Integer.toString(mmnode.id));
 			
 			nodeMap.put(mmnode, node);
@@ -109,8 +113,8 @@ public class ImportedNetwork {
 					// new intermediate node
 					endNode = new Node();
 					endNode.setId((long) ++uniqueNodeId);
-					endNode.setName(Integer.toString(uniqueNodeId));
-					endNode.setType("Highway");
+					endNode.setName(Integer.toString(uniqueNodeId) + " (near link " + linkid + ")");
+					endNode.setType("Freeway");
 					nodes.add(endNode);
 				}
 				
@@ -121,22 +125,47 @@ public class ImportedNetwork {
 				link.setId((long) linkid);
 				maxLinkId = Math.max(maxLinkId, linkid);
 				link.setName(Integer.toString(linkid));
-				double cellCenterOffset = (i + 0.5d) * cellLength; // use center of this cell as the offset to estimate lane count
-				link.setLaneCount((double) mmlink.getNumLanesAtOffset((float) cellCenterOffset));
-				link.setLaneOffset(0); // per alex
-				link.setDetailLevel(0); // TODO: what is this?
+				// use center of this cell as the offset to estimate lane count:
+				double cellCenterOffset = (i + 0.5d) * cellLength; 
+				link.setLaneCount((double) mmlink.getNumLanesAtOffset((float) cellCenterOffset));				
 				link.setLength(cellLength);				
 				link.setSpeedLimit(speedLimit); // TODO: why integer?								
-				link.setType("?"); // TODO: what are valid types?
+				link.setType("Freeway"); // TODO: what are valid types?
+				// per alex k:
+				link.setLaneOffset(0); 
+				link.setDetailLevel(1);
 								
 				links.add(link);
 				
 				// create fundamental diagram map entry
-				FD fd = new FD();
-				fd.setJamDensity(0.124300808 * link.getLaneCount()); // hard coded value from MM
-				// TODO: remaining fields
+				FD fd = new FD();				 
+				Double shockSpeed = null, freeFlowSpeed = null, jamDensity = null, criticalSpeed = null;
+				LinkFluxFuncParams fdParams = mmparameters.linkFluxFunction.get(mmlink);
+				if (fdParams != null) {
+					shockSpeed = fdParams.waveSpeed;
+					freeFlowSpeed = fdParams.freeflowSpeed;
+					jamDensity = fdParams.maxDensity;
+					criticalSpeed = fdParams.criticalSpeed;
+				}
+				// hard coded default values from MM				
+				if (shockSpeed == null) shockSpeed = 5.36448; 
+				if (freeFlowSpeed == null) freeFlowSpeed = mmlink.getAverageSpeedLimit().doubleValue();
+				if (jamDensity == null) jamDensity = 0.124300808 * link.getLaneCount();
+				if (criticalSpeed == null) criticalSpeed = Math.min(26d, freeFlowSpeed - 2d); 
+				fd.setCongestionWaveSpeed(Math.abs(shockSpeed));
+				fd.setFreeFlowSpeed(freeFlowSpeed);				
+				fd.setJamDensity(jamDensity);
+				fd.setCriticalSpeed(criticalSpeed);								
+				// derived quantity assuming smulder's flow model
+				fd.setCapacity(criticalSpeed * jamDensity * (1d - criticalSpeed / freeFlowSpeed));
+				// per alex k:
+				fd.setCapacityDrop(0d);
+				fd.setFreeFlowSpeedStd(0d);
+				fd.setCapacityStd(0d);
+				fd.setCongestionWaveSpeedStd(0d);
 				
-				
+				linkFundamentalDiagramMap.put(link.getId().toString(), fd);
+										
 				startNode = endNode;								
 			}						
 		}
@@ -144,7 +173,8 @@ public class ImportedNetwork {
 		Monitor.out(
 				"Converted " + mmnetwork.getLinks().length + " MM links and " + 
 				mmnetwork.getNodes().length + " MM nodes into " + links.size() +
-				" links and " + nodes.size() + " nodes ...");
+				" links, " + nodes.size() + " nodes, and " + links.size() + 
+				" fundamental diagram map entries ...");
 		
 		// generate unique new link IDs as needed
 		int uniqueLinkId = maxLinkId;
@@ -167,18 +197,21 @@ public class ImportedNetwork {
 			originLink.setEnd(toNode);
 			originLink.setId((long) ++uniqueLinkId);
 			originLink.setName(Integer.toString(uniqueLinkId));
-			originLink.setLaneCount(0d); // ignored
-			originLink.setLaneOffset(0); // per alex
-			originLink.setDetailLevel(0); // TODO: what is this?
-			originLink.setLength(0d); // ignored			
-			originLink.setSpeedLimit(0); // ignored
-			originLink.setType("?"); // TODO: what are valid types?	
-			
+			originLink.setType("Freeway");
+			// per alex k:
+			originLink.setLaneOffset(0); 
+			originLink.setDetailLevel(1);
+			// not applicable for origin links:
+			originLink.setLength(0d);
+			originLink.setLaneCount(0d); 
+			originLink.setSpeedLimit(0);
+							
 			links.add(originLink);
 			
 			// demand map entry
 			Map<String, Double> vehicleTypeMap = new HashMap<String, Double>();
-			vehicleTypeMap.put("1", (double) mmsource.capacity);
+			// put all capacity in single vehicle type "1":
+			vehicleTypeMap.put("1", (double) mmsource.capacity); 
 			originDemandFlowMap.put(Integer.toString(uniqueLinkId), vehicleTypeMap);
 		}
 						
@@ -205,18 +238,34 @@ public class ImportedNetwork {
 			sinkLink.setBegin(fromNode);			
 			sinkLink.setEnd(terminalNode);						
 			sinkLink.setId((long) ++uniqueLinkId);
-			sinkLink.setName(Integer.toString(uniqueLinkId));
-			sinkLink.setLaneCount(1d); // arbitrary choice
-			sinkLink.setLaneOffset(0); // per alex
-			sinkLink.setDetailLevel(0); // TODO: what is this?
-			sinkLink.setLength(100d); // arbitrary choice			
-			sinkLink.setSpeedLimit(20); // arbitrary choice
-			sinkLink.setType("?"); // TODO: what are valid types?	
+			sinkLink.setName(Integer.toString(uniqueLinkId));									
+			sinkLink.setType("Freeway");	
+			// arbitrary plausible values for sink links:
+			sinkLink.setLength(100d);			
+			sinkLink.setSpeedLimit(20);
+			sinkLink.setLaneCount(1d);
+			// not applicable for sink links:
+			sinkLink.setLaneOffset(0);
+			sinkLink.setDetailLevel(1);
 			
 			links.add(sinkLink);
 			
-			// fundamental diagram map entry
-			// TODO
+			// create fundamental diagram map entry
+			FD fd = new FD();				 
+			// arbitrary plausible values for sink links:
+			fd.setFreeFlowSpeed(20d); // 45 mph			
+			fd.setJamDensity(0.124300808d);
+			fd.setCriticalSpeed(18d);
+			fd.setCongestionWaveSpeed(5.36448d);
+			// derived quantity assuming smulder's flow model
+			fd.setCapacity(18d * 0.124300808d * (1d - 18d / 20d));
+			// per alex k:
+			fd.setCapacityDrop(0d);
+			fd.setFreeFlowSpeedStd(0d);
+			fd.setCapacityStd(0d);
+			fd.setCongestionWaveSpeedStd(0d);
+			
+			linkFundamentalDiagramMap.put(sinkLink.getId().toString(), fd);
 		}
 				
 		added = mmnetwork.getTrafficFlowSinks().length;
@@ -242,6 +291,10 @@ public class ImportedNetwork {
 		
 		fundamentalDiagramMap = new FDMap();
 		fundamentalDiagramMap.setFdMap(linkFundamentalDiagramMap);
+		
+		splitRatioMap = new SplitRatioMap();
+		
+		
 				
 		db.close();		
 	}
