@@ -46,6 +46,11 @@
 		</dependency>
 		<dependency>
 			<groupId>edu.berkeley.path</groupId>
+			<artifactId>HIGHWAY</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>edu.berkeley.path</groupId>
 			<artifactId>MATRIX</artifactId>
 			<version>0.1-SNAPSHOT</version>
 		</dependency>
