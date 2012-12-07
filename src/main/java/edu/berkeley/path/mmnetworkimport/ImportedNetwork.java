@@ -113,7 +113,7 @@ public class ImportedNetwork {
 			// step through the cells inserting one link per cell, and interior nodes in between 
 			int cellCount = mmlink.getNbCells();
 			double cellLength = mmlink.getLength() / mmlink.getNbCells();
-			int speedLimit = Math.round(mmlink.getAverageSpeedLimit()); // TODO: why integer?
+			double speedLimit = mmlink.getAverageSpeedLimit();
 			for (int i = 0; i < cellCount; ++i, ++linkid) {
 								
 				if (i == cellCount - 1) {
@@ -140,8 +140,8 @@ public class ImportedNetwork {
 				double cellCenterOffset = (i + 0.5d) * cellLength; 
 				link.setLaneCount((double) mmlink.getNumLanesAtOffset((float) cellCenterOffset));				
 				link.setLength(cellLength);				
-				link.setSpeedLimit(speedLimit); // TODO: why integer?								
-				link.setType("Freeway"); // TODO: what are valid types?
+				link.setSpeedLimit(speedLimit);								
+				link.setType("Freeway");
 				// per alex k:
 				link.setLaneOffset(0); 
 				link.setDetailLevel(1);
@@ -216,7 +216,7 @@ public class ImportedNetwork {
 			// not applicable for origin links:
 			originLink.setLength(0d);
 			originLink.setLaneCount(0d); 
-			originLink.setSpeedLimit(0);
+			originLink.setSpeedLimit(0d);
 							
 			links.add(originLink);
 			linkMap.put(mmsource, originLink);
@@ -256,7 +256,7 @@ public class ImportedNetwork {
 			sinkLink.setType("Freeway");	
 			// arbitrary plausible values for sink links:
 			sinkLink.setLength(100d);			
-			sinkLink.setSpeedLimit(20);
+			sinkLink.setSpeedLimit(20d);
 			sinkLink.setLaneCount(1d);
 			// not applicable for sink links:
 			sinkLink.setLaneOffset(0);
