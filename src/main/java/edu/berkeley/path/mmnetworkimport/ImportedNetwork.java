@@ -52,6 +52,7 @@ import edu.berkeley.path.model_elements.*;
  */
 public class ImportedNetwork {
 	
+	private final FreewayContextConfig freewayContextConfig;	
 	private final Network network;
 	private final FDMap fundamentalDiagramMap;
 	private final SplitRatioMap splitRatioMap;
@@ -343,9 +344,30 @@ public class ImportedNetwork {
 		
 		Monitor.out("Set empty allocation matrices for " + mmnetwork.getTrafficFlowSources().length +
 				" origin (source) nodes and " + mmnetwork.getTrafficFlowSinks().length + " sink nodes ... ");
-		Monitor.out("\n");
 			
 		// create final model-elements objects
+		
+		freewayContextConfig = new FreewayContextConfig();
+		freewayContextConfig.setCTMTypeEnum(CTMType.VELOCITY);	
+		freewayContextConfig.setDt(Duration.fromSeconds(mmnetwork.attributes.getReal("highway_timestep")));
+		freewayContextConfig.setDtOutput(Duration.fromSeconds(
+				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // assuming these are the same thing		
+		EnKFParams enkf = new EnKFParams(true); // uses MM defaults 
+		freewayContextConfig.setEnkfParams(enkf);
+		freewayContextConfig.setEnkfTypeEnum(EnKFType.GLOBALJAMA);
+		freewayContextConfig.setFDTypeEnum(FDTypeEnum.SMULDERS);
+		freewayContextConfig.setRunModeEnum(RunMode.HISTORICAL);
+		freewayContextConfig.setName("MM nid " + Integer.toString(mm_nid));
+		freewayContextConfig.setTimeBegin(new DateTime(mmnetwork.attributes.getTimestamp("starttime").getTimeInMillis()));
+		freewayContextConfig.setTimeEnd(new DateTime(mmnetwork.attributes.getTimestamp("endtime").getTimeInMillis()));
+		freewayContextConfig.setWorkflowEnum(Workflow.ESTIMATION);
+		
+		Monitor.out("Created config with duration " +  
+				((freewayContextConfig.getTimeEnd().getMilliseconds().doubleValue() -
+						freewayContextConfig.getTimeBegin().getMilliseconds().doubleValue()) / 1000d) + 
+				" sec, " +
+				"time step " + freewayContextConfig.getDt().getMilliseconds().doubleValue() / 1000d + " sec, and " +
+				"output time step " + freewayContextConfig.getDtOutput().getMilliseconds().doubleValue() / 1000d + " sec.");
 		
 		network = new Network();
 		network.setName("MM nid " + Integer.toString(mm_nid));
@@ -364,6 +386,8 @@ public class ImportedNetwork {
 		
 		splitRatioMap = new SplitRatioMap();		
 		splitRatioMap.setRatioMap(nodeSplitRatioMap );
+		
+		Monitor.out("\n");
 				
 		db.close();		
 	}
@@ -424,6 +448,13 @@ public class ImportedNetwork {
 	 */
 	public DemandMap getOriginDemandMap() {
 		return originDemandMap;
+	}
+	
+	/**
+	 * @return Freeway CTM+EnKF configuration representing corresponding MM settings 
+	 */
+	public FreewayContextConfig getFreewayContextConfig() {
+		return freewayContextConfig;
 	}
 	
 }
