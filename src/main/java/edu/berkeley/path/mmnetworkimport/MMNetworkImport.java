@@ -26,9 +26,14 @@
 
 package edu.berkeley.path.mmnetworkimport;
 
+import java.io.File;
+import java.io.IOException;
+
 import netconfig.NetconfigException;
 import core.DatabaseException;
 import core.DatabaseReader;
+import core.Monitor;
+import edu.berkeley.path.model_elements.*;
 
 /**
  * Main class for Mobile Millenium -> modelElements network importer
@@ -42,17 +47,38 @@ public class MMNetworkImport {
 	 * modelElements members. 
 	 * @throws NetconfigException 
 	 * @throws DatabaseException 
+	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws DatabaseException, NetconfigException {
-		
-		// change these as needed
-		int nid = 28, cid = 1; // MM network and config IDs
+	public static void main(String[] args) throws DatabaseException, NetconfigException, IOException {
+						
 		DatabaseReader db = new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm");
-				
-		ImportedNetwork network = new ImportedNetwork(nid, cid, db);
 		
-		network.getNetwork();
-		// etc
+		// MM network and config IDs
+		int nid = 335, cid = 1;
+		
+		importNetworkExportJson(nid, cid, db);
+		
+	}
+	
+	private static void importNetworkExportJson(int nid, int cid, DatabaseReader db) throws DatabaseException, NetconfigException, IOException {
+		
+		ImportedNetwork imported = new ImportedNetwork(nid, cid, db);
+		
+		 // create output directory
+		String outputDirectory = "output/nid" + Integer.toString(nid);
+		File dir = new File(outputDirectory);
+		dir.mkdirs();
+		
+		// write each model-elements object
+		JsonHandler.writeToFile(imported.getFreewayContextConfig(), outputDirectory + "/FreewayContextConfig.json");
+		JsonHandler.writeToFile(imported.getNetwork(), outputDirectory + "/Network.json");		
+		JsonHandler.writeToFile(imported.getFundamentalDiagramMap(), outputDirectory + "/FDMap.json");
+		JsonHandler.writeToFile(imported.getOriginDemandMap(), outputDirectory + "/DemandMap.json");
+		JsonHandler.writeToFile(imported.getSplitRatioMap(), outputDirectory + "/SplitRatioMap.json");
+					
+		Monitor.out("MM network " + nid + " written to directory " + dir.getCanonicalPath());
+		Monitor.out("\n");
+		
 		
 	}
 
