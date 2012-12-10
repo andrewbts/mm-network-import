@@ -351,12 +351,12 @@ public class ImportedNetwork {
 		freewayContextConfig.setCTMTypeEnum(CTMType.VELOCITY);	
 		freewayContextConfig.setDt(Duration.fromSeconds(mmnetwork.attributes.getReal("highway_timestep")));
 		freewayContextConfig.setDtOutput(Duration.fromSeconds(
-				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // assuming these are the same thing		
-		EnKFParams enkf = new EnKFParams(true); // uses MM defaults 
-		freewayContextConfig.setEnkfParams(enkf);
+				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // assuming these are the same thing		 
+		freewayContextConfig.setEnkfParams(EnKFParams.createWithMMDefaults());
 		freewayContextConfig.setEnkfTypeEnum(EnKFType.GLOBALJAMA);
 		freewayContextConfig.setFDTypeEnum(FDTypeEnum.SMULDERS);
 		freewayContextConfig.setRunModeEnum(RunMode.HISTORICAL);
+		freewayContextConfig.setId(0L);
 		freewayContextConfig.setName("MM nid " + Integer.toString(mm_nid));
 		freewayContextConfig.setTimeBegin(new DateTime(mmnetwork.attributes.getTimestamp("starttime").getTimeInMillis()));
 		freewayContextConfig.setTimeEnd(new DateTime(mmnetwork.attributes.getTimestamp("endtime").getTimeInMillis()));
@@ -370,6 +370,7 @@ public class ImportedNetwork {
 				"output time step " + freewayContextConfig.getDtOutput().getMilliseconds().doubleValue() / 1000d + " sec.");
 		
 		network = new Network();
+		network.setId(0L);
 		network.setName("MM nid " + Integer.toString(mm_nid));
 		network.setDescription(
 				"Mobile Millenium network " + Integer.toString(mm_nid) + 
