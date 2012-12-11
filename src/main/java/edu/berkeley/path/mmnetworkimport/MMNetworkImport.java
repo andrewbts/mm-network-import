@@ -53,10 +53,13 @@ public class MMNetworkImport {
 						
 		DatabaseReader db = new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm");
 		
-		// MM network and config IDs
-		int nid = 335, cid = 1;
+		importNetworkExportJson(28, 1, db);
+		importNetworkExportJson(335, 1, db);
+		importNetworkExportJson(179, 1, db);
+		importNetworkExportJson(180, 1, db);
+		importNetworkExportJson(181, 1, db);
 		
-		importNetworkExportJson(nid, cid, db);
+		db.close();	
 		
 	}
 	
