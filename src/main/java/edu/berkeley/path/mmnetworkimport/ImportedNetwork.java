@@ -351,6 +351,7 @@ public class ImportedNetwork {
 		
 		freewayContextConfig = new FreewayContextConfig();
 		freewayContextConfig.setCTMTypeEnum(CTMType.VELOCITY);	
+		freewayContextConfig.setEnsembleSize(150);
 		freewayContextConfig.setDt(Duration.fromSeconds(mmnetwork.attributes.getReal("highway_timestep")));
 		freewayContextConfig.setDtOutput(Duration.fromSeconds(
 				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // assuming these are the same thing
@@ -364,6 +365,7 @@ public class ImportedNetwork {
 		freewayContextConfig.getEnkfParams().setNavteqNoiseStdev(mmEnKFParams.navteqNoiseStdev);
 		freewayContextConfig.getEnkfParams().setTelenavNoiseMean(mmEnKFParams.telenavNoiseMean);
 		freewayContextConfig.getEnkfParams().setTelenavNoiseStdev(mmEnKFParams.telenavNoiseStdev);
+		freewayContextConfig.setInitialDensityFraction(0.01d);
 		freewayContextConfig.setEnkfTypeEnum(EnKFType.GLOBALJAMA);
 		freewayContextConfig.setFDTypeEnum(FDTypeEnum.SMULDERS);
 		freewayContextConfig.setRunModeEnum(RunMode.HISTORICAL);
