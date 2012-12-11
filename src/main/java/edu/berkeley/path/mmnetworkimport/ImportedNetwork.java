@@ -33,12 +33,14 @@ import calibration.LinkFluxFuncParams;
 import core.DatabaseException;
 import core.DatabaseReader;
 import core.Monitor;
+import core.Time;
 import netconfig.ModelGraphLink;
 import netconfig.ModelGraphNode;
 import netconfig.NetconfigException;
 import netconfig.TrafficFlowSink;
 import netconfig.TrafficFlowSource;
 import parameters.ConfigStore;
+import parameters.EnkfNoiseParams;
 import flowmodel.FlowModelNetwork;
 import datatypes.State;
 
@@ -351,21 +353,32 @@ public class ImportedNetwork {
 		freewayContextConfig.setCTMTypeEnum(CTMType.VELOCITY);	
 		freewayContextConfig.setDt(Duration.fromSeconds(mmnetwork.attributes.getReal("highway_timestep")));
 		freewayContextConfig.setDtOutput(Duration.fromSeconds(
-				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // assuming these are the same thing		 
+				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // assuming these are the same thing
+		EnkfNoiseParams mmEnKFParams = EnkfNoiseParams.getEnkfNoiseParamsFromDB(db, mm_cid);
+		freewayContextConfig.setAdditiveModelNoiseMean(mmEnKFParams.modelNoiseMean);
+		freewayContextConfig.setAdditiveModelNoiseStdDev(mmEnKFParams.modelNoiseStdev);
 		freewayContextConfig.setEnkfParams(EnKFParams.createWithMMDefaults());
+		freewayContextConfig.getEnkfParams().setModelNoiseMean(mmEnKFParams.modelNoiseMean);
+		freewayContextConfig.getEnkfParams().setModelNoiseStdev(mmEnKFParams.modelNoiseStdev);
+		freewayContextConfig.getEnkfParams().setNavteqNoiseMean(mmEnKFParams.navteqNoiseMean);
+		freewayContextConfig.getEnkfParams().setNavteqNoiseStdev(mmEnKFParams.navteqNoiseStdev);
+		freewayContextConfig.getEnkfParams().setTelenavNoiseMean(mmEnKFParams.telenavNoiseMean);
+		freewayContextConfig.getEnkfParams().setTelenavNoiseStdev(mmEnKFParams.telenavNoiseStdev);
 		freewayContextConfig.setEnkfTypeEnum(EnKFType.GLOBALJAMA);
 		freewayContextConfig.setFDTypeEnum(FDTypeEnum.SMULDERS);
 		freewayContextConfig.setRunModeEnum(RunMode.HISTORICAL);
 		freewayContextConfig.setId(0L);
 		freewayContextConfig.setName("MM nid " + Integer.toString(mm_nid));
-		freewayContextConfig.setTimeBegin(new DateTime(mmnetwork.attributes.getTimestamp("starttime").getTimeInMillis()));
-		freewayContextConfig.setTimeEnd(new DateTime(mmnetwork.attributes.getTimestamp("endtime").getTimeInMillis()));
-		freewayContextConfig.setWorkflowEnum(Workflow.ESTIMATION);
+		Time startTime = mmnetwork.attributes.getTimestamp("starttime");
+		Long startMilliseconds = (startTime == null ? 0 : startTime.getTimeInMillis());
+		freewayContextConfig.setTimeBegin(new DateTime(startMilliseconds));
+		Time endTime = mmnetwork.attributes.getTimestamp("endtime");
+		Long endMilliseconds = (endTime == null ? 0 : endTime.getTimeInMillis());
+		freewayContextConfig.setTimeEnd(new DateTime(endMilliseconds));
+		freewayContextConfig.setWorkflowEnum(Workflow.ESTIMATION);		
 		
 		Monitor.out("Created config with duration " +  
-				((freewayContextConfig.getTimeEnd().getMilliseconds().doubleValue() -
-						freewayContextConfig.getTimeBegin().getMilliseconds().doubleValue()) / 1000d) + 
-				" sec, " +
+				((endMilliseconds.doubleValue() - startMilliseconds.doubleValue()) / 1000d) + " sec, " +
 				"time step " + freewayContextConfig.getDt().getMilliseconds().doubleValue() / 1000d + " sec, and " +
 				"output time step " + freewayContextConfig.getDtOutput().getMilliseconds().doubleValue() / 1000d + " sec.");
 		
@@ -390,7 +403,6 @@ public class ImportedNetwork {
 		
 		Monitor.out("\n");
 				
-		db.close();		
 	}
 	
 	/**
