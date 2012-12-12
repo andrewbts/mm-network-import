@@ -79,7 +79,8 @@ public class ImportedNetwork {
 		Monitor.out("Importing MM nid " + mm_nid + " to model-elements format ...");
 		
 		// map from MM objects to model-elements objects
-		Map<Object, Link> linkMap = new HashMap<Object, Link>();
+		Map<Object, Link> ingoingLinkMap = new HashMap<Object, Link>();
+		Map<Object, Link> outgoingLinkMap = new HashMap<Object, Link>();
 		Map<Object, Node> nodeMap = new HashMap<Object, Node>();
 		
 		List<Node> nodes = new ArrayList<Node>();
@@ -151,7 +152,12 @@ public class ImportedNetwork {
 				link.setDetailLevel(1);
 								
 				links.add(link);
-				linkMap.put(mmlink, link);
+				
+				if (i == 0)
+					outgoingLinkMap.put(mmlink, link);
+				
+				if (i == cellCount - 1)
+					ingoingLinkMap.put(mmlink, link);
 				
 				// create fundamental diagram map entry
 				FD fd = new FD();				 
@@ -223,7 +229,7 @@ public class ImportedNetwork {
 			originLink.setSpeedLimit(0d);
 							
 			links.add(originLink);
-			linkMap.put(mmsource, originLink);
+			ingoingLinkMap.put(mmsource, originLink);
 			
 			// demand map entry
 			Map<String, Double> vehicleTypeMap = new HashMap<String, Double>();
@@ -267,7 +273,7 @@ public class ImportedNetwork {
 			sinkLink.setDetailLevel(1);
 			
 			links.add(sinkLink);
-			linkMap.put(mmsink, sinkLink);
+			outgoingLinkMap.put(mmsink, sinkLink);
 			
 			// create fundamental diagram map entry
 			FD fd = new FD();				 
@@ -335,13 +341,13 @@ public class ImportedNetwork {
 			// rows of MM allocation matrix are ordered by links first, then sources
 			for (ModelGraphLink mmInLink : mmnode.getInLinks()) {
 				++in_index;				
-				splitRatios.put(linkMap.get(mmInLink).getId().toString(), 
-						createSingleSplitRatio(allocationMatrix, in_index, mmnode, linkMap));
+				splitRatios.put(ingoingLinkMap.get(mmInLink).getId().toString(), 
+						createSingleSplitRatio(allocationMatrix, in_index, mmnode, outgoingLinkMap));
 			}
 			for (TrafficFlowSource mmsource : mmnode.getTrafficFlowSources()) {
 				++in_index;				
-				splitRatios.put(linkMap.get(mmsource).getId().toString(), 
-						createSingleSplitRatio(allocationMatrix, in_index, mmnode, linkMap));
+				splitRatios.put(ingoingLinkMap.get(mmsource).getId().toString(), 
+						createSingleSplitRatio(allocationMatrix, in_index, mmnode, outgoingLinkMap));
 			}
 			nodeSplitRatioMap.put(node.getId().toString(), splitRatios);
 		}								
@@ -427,17 +433,17 @@ public class ImportedNetwork {
 	 * @throws NetconfigException 
 	 */
 	private Map<String, Map<String, Double>> createSingleSplitRatio(
-			double[][] allocationMatrix, int row, ModelGraphNode mmnode, Map<Object, Link> linkMap) throws NetconfigException {
+			double[][] allocationMatrix, int row, ModelGraphNode mmnode, Map<Object, Link> outgoingLinkMap) throws NetconfigException {
 		Map<String, Map<String, Double>> splitRatio = new HashMap<String, Map<String, Double>>();
 		int out_index = -1;
 		// MM allocation matrix columns are ordered with out-links first, then sinks
 		for (ModelGraphLink mmOutLink : mmnode.getOutLinks()) {
 			++out_index;
-			splitRatio.put(linkMap.get(mmOutLink).getId().toString(), this.<String, Double>createSingletonMap("1", allocationMatrix[out_index][row]));
+			splitRatio.put(outgoingLinkMap.get(mmOutLink).getId().toString(), this.<String, Double>createSingletonMap("1", allocationMatrix[out_index][row]));
 		}
 		for (TrafficFlowSink mmSink : mmnode.getTrafficFlowSinks()) {
 			++out_index;
-			splitRatio.put(linkMap.get(mmSink).getId().toString(), this.<String, Double>createSingletonMap("1", allocationMatrix[out_index][row]));
+			splitRatio.put(outgoingLinkMap.get(mmSink).getId().toString(), this.<String, Double>createSingletonMap("1", allocationMatrix[out_index][row]));
 		}
 		return splitRatio;
 	}
