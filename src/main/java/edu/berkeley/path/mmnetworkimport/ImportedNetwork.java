@@ -408,6 +408,7 @@ public class ImportedNetwork {
 		Long endMilliseconds = (endTime == null ? 0 : endTime.getTimeInMillis());
 		freewayContextConfig.setTimeEnd(new DateTime(endMilliseconds));
 		freewayContextConfig.setWorkflowEnum(Workflow.ESTIMATION);		
+		freewayContextConfig.setFeedEnum(Feed.PEMS);
 		
 		Monitor.out("Created config with duration " +  
 				((endMilliseconds.doubleValue() - startMilliseconds.doubleValue()) / 1000d) + " sec, " +
