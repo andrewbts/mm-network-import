@@ -72,11 +72,17 @@ public class ImportedNetwork {
 	 */
 	public ImportedNetwork(int mm_nid, int mm_cid, DatabaseReader db) throws DatabaseException, NetconfigException {						
 		
+		Monitor.out("Loading MM nid " + mm_nid + " from DB ...");
+		
 		// load Mobile Millenium network using netconfig library
 		netconfig.Network mmnetwork = 
 			new netconfig.Network(db, netconfig.Network.NetworkType.MODEL_GRAPH, mm_nid); 		
 		
 		State.Parameters mmparameters = ConfigStore.getParameters(mmnetwork, mm_cid);
+		
+		// load pems sensor sets
+		Monitor.set_nid(mm_nid); // workaround: getSensorsCached queries the global nid from Monitor so set it...
+		netconfig.SensorPeMS[] mmpemssensors = DataType.PeMS.getSensorsCached(mmnetwork);
 		
 		Monitor.out("");
 		Monitor.out("Importing MM nid " + mm_nid + " to model-elements format ...");
@@ -379,25 +385,24 @@ public class ImportedNetwork {
 		Monitor.out("Set empty allocation matrices for " + mmnetwork.getTrafficFlowSources().length +
 				" origin (source) nodes and " + mmnetwork.getTrafficFlowSinks().length + " sink nodes ... ");
 		
-		// import pems sensor sets
-		netconfig.SensorPeMS[] mmpemssensors = DataType.PeMS.getSensorsCached(mmnetwork);
-		SensorSet sensorSet = new SensorSet();
+		// import pems sensor sets		
 		List<Sensor> sensorList = new ArrayList<Sensor>(mmpemssensors.length);				
 		for (netconfig.SensorPeMS mmsensor : mmpemssensors) {			
 			Sensor sensor = new Sensor();
 			sensor.setEntityId(Integer.toString(mmsensor.vdsID));
-			sensor.setHealthStatus(1d); // where to get this from?
+			sensor.setHealthStatus(mmsensor.isValid() ? 1d : 0d);
 			sensor.setId(Integer.toString(mmsensor.ID));
 			sensor.setLaneNum((double) mmsensor.lane);
 			Pair<Link, Double> localLinkOffset = getLinkCellOffset(linkCellMap.get(mmsensor.link), mmsensor.offset, mmsensor.link.length);
 			sensor.setLinkId(localLinkOffset.getLeft().getId());
 			sensor.setLinkOffset(localLinkOffset.getRight());
-			sensor.setMeasurementFeedId("PeMS"); // what are valid values here?
-			sensor.setType(new SensorType()); // what to put there? should this be changed to enum?
+			sensor.setMeasurementFeedId("PeMS"); // per Alex
+			sensor.setTypeEnum(SensorTypeEnum.LOOP);
 			
 			sensorList.add(sensor);			
 		}
-		sensorSet.setSensorList(sensorList);						
+							
+		Monitor.out("Converted " + mmpemssensors.length + " PeMS sensors ...");
 			
 		// create final model-elements objects
 		
@@ -431,6 +436,13 @@ public class ImportedNetwork {
 		freewayContextConfig.setTimeEnd(new DateTime(endMilliseconds));
 		freewayContextConfig.setWorkflowEnum(Workflow.ESTIMATION);		
 		freewayContextConfig.setFeedEnum(Feed.PEMS);
+		
+		SensorSet sensorSet = new SensorSet();
+		sensorSet.setSensorList(sensorList);
+		long sensorSetId = 10000 + mm_nid; // tentative attempt at something likely unique, check with alex
+		sensorSet.setId(sensorSetId);
+		sensorSet.setName(Long.toString(sensorSetId));
+		sensorSet.setDescription("PeMS sensors for MM nid " + mm_nid + ", converted by mm-network-import");
 		freewayContextConfig.setSensorSet(sensorSet);
 		
 		Monitor.out("Created config with duration " +  
@@ -447,7 +459,7 @@ public class ImportedNetwork {
 		splitRatioMap = new SplitRatioMap();		
 		splitRatioMap.setRatioMap(nodeSplitRatioMap );
 		
-		Monitor.out("\n");
+		Monitor.out("");
 				
 	}
 	
@@ -482,12 +494,14 @@ public class ImportedNetwork {
 	 */
 	private Pair<Link, Double> getLinkCellOffset(List<Link> links, double totalOffset, double totalLength) {
 		// assume all cells the same length
-		int index = Math.min(links.size(),
-				(int)(links.size() * totalOffset / totalLength) - 1);
+		int index = Math.max(Math.min(links.size() - 1,
+				(int)(links.size() * totalOffset / totalLength)), 0);
 		double cellSize = totalLength / links.size();
 		
 		double offset = totalOffset - index * cellSize;
 		Link link = links.get(index);
+		
+		// Monitor.out(totalOffset + " / " + totalLength + " -> " + index + " / " + links.size() + " + " + offset);
 		
 		return Pair.of(link, offset);		
 	}
@@ -518,14 +532,6 @@ public class ImportedNetwork {
 		return list.get(0);
 	}
 	
-	/**
-	 * Get middle element of list, rounding down (e.g. in list of size 4, return the 2nd of 4 elements)
-	 */
-	private <T> T getMiddleElement(List<T> list) {
-		int index = (int)(list.size() / 2d - 1d); 
-		return list.get(index);
-	}
-
 	/**
 	 * @return Model elements network
 	 */
