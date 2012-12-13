@@ -80,7 +80,7 @@ public class MMNetworkImport {
 		JsonHandler.writeToFile(imported.getSplitRatioMap(), outputDirectory + "/SplitRatioMap.json");
 					
 		Monitor.out("MM network " + nid + " written to directory " + dir.getCanonicalPath());
-		Monitor.out("\n");
+		Monitor.out("");
 		
 		
 	}
