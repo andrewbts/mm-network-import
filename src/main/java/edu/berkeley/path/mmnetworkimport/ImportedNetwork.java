@@ -28,12 +28,15 @@ package edu.berkeley.path.mmnetworkimport;
 
 import java.util.*;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 // MM imports
 import calibration.LinkFluxFuncParams;
 import core.DatabaseException;
 import core.DatabaseReader;
 import core.Monitor;
 import core.Time;
+import netconfig.DataType;
 import netconfig.ModelGraphLink;
 import netconfig.ModelGraphNode;
 import netconfig.NetconfigException;
@@ -58,7 +61,7 @@ public class ImportedNetwork {
 	private final Network network;
 	private final FDMap fundamentalDiagramMap;
 	private final SplitRatioMap splitRatioMap;
-	private final DemandMap originDemandMap;
+	private final DemandMap originDemandMap;	
 
 	/**
 	 * Import network corresponding to the specified MM nid.
@@ -78,9 +81,10 @@ public class ImportedNetwork {
 		Monitor.out("");
 		Monitor.out("Importing MM nid " + mm_nid + " to model-elements format ...");
 		
-		// map from MM objects to model-elements objects
-		Map<Object, Link> ingoingLinkMap = new HashMap<Object, Link>();
-		Map<Object, Link> outgoingLinkMap = new HashMap<Object, Link>();
+		// map from MM links, sources, and sinks, 
+		// to list of model-elements links, one for each cell in the MM object (1 in case of source/sink)
+		Map<Object, List<Link>> linkCellMap = new HashMap<Object, List<Link>>();
+		// map from MM nodes to model-elements nodes
 		Map<Object, Node> nodeMap = new HashMap<Object, Node>();
 		
 		List<Node> nodes = new ArrayList<Node>();
@@ -113,9 +117,10 @@ public class ImportedNetwork {
 			Node endNode;
 			Link link;
 			int linkid = mmlink.id * 100; // space out to get unique link ids
-			
+						
 			// step through the cells inserting one link per cell, and interior nodes in between 
 			int cellCount = mmlink.getNbCells();
+			List<Link> cellLinks = new ArrayList<Link>(cellCount);
 			double cellLength = mmlink.getLength() / mmlink.getNbCells();
 			double speedLimit = mmlink.getAverageSpeedLimit();
 			for (int i = 0; i < cellCount; ++i, ++linkid) {
@@ -151,14 +156,9 @@ public class ImportedNetwork {
 				link.setLaneOffset(0); 
 				link.setDetailLevel(1);
 								
-				links.add(link);
-				
-				if (i == 0)
-					outgoingLinkMap.put(mmlink, link);
-				
-				if (i == cellCount - 1)
-					ingoingLinkMap.put(mmlink, link);
-				
+				links.add(link);				
+				cellLinks.add(link);
+								
 				// create fundamental diagram map entry
 				FD fd = new FD();				 
 				Double shockSpeed = null, freeFlowSpeed = null, jamDensity = null, criticalSpeed = null;
@@ -190,6 +190,8 @@ public class ImportedNetwork {
 										
 				startNode = endNode;								
 			}						
+			
+			linkCellMap.put(mmlink, cellLinks);
 		}
 		
 		Monitor.out(
@@ -229,7 +231,7 @@ public class ImportedNetwork {
 			originLink.setSpeedLimit(0d);
 							
 			links.add(originLink);
-			ingoingLinkMap.put(mmsource, originLink);
+			linkCellMap.put(mmsource, createSingletonList(originLink));
 			
 			// demand map entry
 			Map<String, Double> vehicleTypeMap = new HashMap<String, Double>();
@@ -273,7 +275,7 @@ public class ImportedNetwork {
 			sinkLink.setDetailLevel(1);
 			
 			links.add(sinkLink);
-			outgoingLinkMap.put(mmsink, sinkLink);
+			linkCellMap.put(mmsink, createSingletonList(sinkLink));
 			
 			// create fundamental diagram map entry
 			FD fd = new FD();				 
@@ -341,13 +343,13 @@ public class ImportedNetwork {
 			// rows of MM allocation matrix are ordered by links first, then sources
 			for (ModelGraphLink mmInLink : mmnode.getInLinks()) {
 				++in_index;				
-				splitRatios.put(ingoingLinkMap.get(mmInLink).getId().toString(), 
-						createSingleSplitRatio(allocationMatrix, in_index, mmnode, outgoingLinkMap));
+				splitRatios.put(getLastElement(linkCellMap.get(mmInLink)).getId().toString(), 
+						createSingleSplitRatio(allocationMatrix, in_index, mmnode, linkCellMap));
 			}
 			for (TrafficFlowSource mmsource : mmnode.getTrafficFlowSources()) {
 				++in_index;				
-				splitRatios.put(ingoingLinkMap.get(mmsource).getId().toString(), 
-						createSingleSplitRatio(allocationMatrix, in_index, mmnode, outgoingLinkMap));
+				splitRatios.put(getLastElement(linkCellMap.get(mmsource)).getId().toString(), 
+						createSingleSplitRatio(allocationMatrix, in_index, mmnode, linkCellMap));
 			}
 			nodeSplitRatioMap.put(node.getId().toString(), splitRatios);
 		}								
@@ -376,6 +378,26 @@ public class ImportedNetwork {
 		
 		Monitor.out("Set empty allocation matrices for " + mmnetwork.getTrafficFlowSources().length +
 				" origin (source) nodes and " + mmnetwork.getTrafficFlowSinks().length + " sink nodes ... ");
+		
+		// import pems sensor sets
+		netconfig.SensorPeMS[] mmpemssensors = DataType.PeMS.getSensorsCached(mmnetwork);
+		SensorSet sensorSet = new SensorSet();
+		List<Sensor> sensorList = new ArrayList<Sensor>(mmpemssensors.length);				
+		for (netconfig.SensorPeMS mmsensor : mmpemssensors) {			
+			Sensor sensor = new Sensor();
+			sensor.setEntityId(Integer.toString(mmsensor.vdsID));
+			sensor.setHealthStatus(1d); // where to get this from?
+			sensor.setId(Integer.toString(mmsensor.ID));
+			sensor.setLaneNum((double) mmsensor.lane);
+			Pair<Link, Double> localLinkOffset = getLinkCellOffset(linkCellMap.get(mmsensor.link), mmsensor.offset, mmsensor.link.length);
+			sensor.setLinkId(localLinkOffset.getLeft().getId());
+			sensor.setLinkOffset(localLinkOffset.getRight());
+			sensor.setMeasurementFeedId("PeMS"); // what are valid values here?
+			sensor.setType(new SensorType()); // what to put there? should this be changed to enum?
+			
+			sensorList.add(sensor);			
+		}
+		sensorSet.setSensorList(sensorList);						
 			
 		// create final model-elements objects
 		
@@ -409,6 +431,7 @@ public class ImportedNetwork {
 		freewayContextConfig.setTimeEnd(new DateTime(endMilliseconds));
 		freewayContextConfig.setWorkflowEnum(Workflow.ESTIMATION);		
 		freewayContextConfig.setFeedEnum(Feed.PEMS);
+		freewayContextConfig.setSensorSet(sensorSet);
 		
 		Monitor.out("Created config with duration " +  
 				((endMilliseconds.doubleValue() - startMilliseconds.doubleValue()) / 1000d) + " sec, " +
@@ -434,19 +457,39 @@ public class ImportedNetwork {
 	 * @throws NetconfigException 
 	 */
 	private Map<String, Map<String, Double>> createSingleSplitRatio(
-			double[][] allocationMatrix, int row, ModelGraphNode mmnode, Map<Object, Link> outgoingLinkMap) throws NetconfigException {
+			double[][] allocationMatrix, int row, ModelGraphNode mmnode, Map<Object, List<Link>> linkCellMap) throws NetconfigException {
 		Map<String, Map<String, Double>> splitRatio = new HashMap<String, Map<String, Double>>();
 		int out_index = -1;
 		// MM allocation matrix columns are ordered with out-links first, then sinks
 		for (ModelGraphLink mmOutLink : mmnode.getOutLinks()) {
 			++out_index;
-			splitRatio.put(outgoingLinkMap.get(mmOutLink).getId().toString(), this.<String, Double>createSingletonMap("1", allocationMatrix[out_index][row]));
+			splitRatio.put(getFirstElement(linkCellMap.get(mmOutLink)).getId().toString(), this.<String, Double>createSingletonMap("1", allocationMatrix[out_index][row]));
 		}
 		for (TrafficFlowSink mmSink : mmnode.getTrafficFlowSinks()) {
 			++out_index;
-			splitRatio.put(outgoingLinkMap.get(mmSink).getId().toString(), this.<String, Double>createSingletonMap("1", allocationMatrix[out_index][row]));
+			splitRatio.put(getFirstElement(linkCellMap.get(mmSink)).getId().toString(), this.<String, Double>createSingletonMap("1", allocationMatrix[out_index][row]));
 		}
 		return splitRatio;
+	}
+	
+	/**
+	 * Find link with a sequence of links corresponding to a given overall offset. 
+	 * Also return the local offset within the found link. 
+	 * @param links List of links, assumed all the same length
+	 * @param totalOffset Overall offset with sequence of links for which to find the link number and local offset
+	 * @param totalLength Total length of all links (should equal total of lengths of elements of links parameter)
+	 * @return Pair of link and local offset
+	 */
+	private Pair<Link, Double> getLinkCellOffset(List<Link> links, double totalOffset, double totalLength) {
+		// assume all cells the same length
+		int index = Math.min(links.size(),
+				(int)(links.size() * totalOffset / totalLength) - 1);
+		double cellSize = totalLength / links.size();
+		
+		double offset = totalOffset - index * cellSize;
+		Link link = links.get(index);
+		
+		return Pair.of(link, offset);		
 	}
 	
 	/**
@@ -456,6 +499,31 @@ public class ImportedNetwork {
 		Map<K, V> map = new HashMap<K, V>(1);
 		map.put(key, value);
 		return map;
+	}
+	
+	/**
+	 * Create singleton list (list with exactly one element)
+	 */
+	private <T> List<T> createSingletonList(T value) {
+		List<T> singleton = new ArrayList<T>(1);
+		singleton.add(value);
+		return singleton;
+	}
+	
+	private <T> T getLastElement(List<T> list) {
+		return list.get(list.size() - 1);
+	}
+	
+	private <T> T getFirstElement(List<T> list) {
+		return list.get(0);
+	}
+	
+	/**
+	 * Get middle element of list, rounding down (e.g. in list of size 4, return the 2nd of 4 elements)
+	 */
+	private <T> T getMiddleElement(List<T> list) {
+		int index = (int)(list.size() / 2d - 1d); 
+		return list.get(index);
 	}
 
 	/**
