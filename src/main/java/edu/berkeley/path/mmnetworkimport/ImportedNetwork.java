@@ -78,7 +78,7 @@ public class ImportedNetwork {
 		netconfig.Network mmnetwork = 
 			new netconfig.Network(db, netconfig.Network.NetworkType.MODEL_GRAPH, mm_nid); 		
 		
-		State.Parameters mmparameters = ConfigStore.getParameters(mmnetwork, mm_cid);
+		State.Parameters mmparameters = ConfigStore.getParameters(db, mm_nid, mm_cid);
 		
 		// load pems sensor sets
 		Monitor.set_nid(mm_nid); // workaround: getSensorsCached queries the global nid from Monitor so set it...
@@ -436,6 +436,9 @@ public class ImportedNetwork {
 		freewayContextConfig.setTimeEnd(new DateTime(endMilliseconds));
 		freewayContextConfig.setWorkflowEnum(Workflow.ESTIMATION);		
 		freewayContextConfig.setFeedEnum(Feed.PEMS);
+		freewayContextConfig.setInitialEnsembleState(null);
+		freewayContextConfig.setInitialState(null);
+		freewayContextConfig.setInitialStateUncertainty(0d);
 		
 		SensorSet sensorSet = new SensorSet();
 		sensorSet.setSensorList(sensorList);
