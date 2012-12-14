@@ -57,12 +57,14 @@ public class MMNetworkImport {
 		
 		// output directly into model-elements github layout at same level:
 		parentOutputDirectory = "../model-elements/examples/mm-networks";
-		
+				
 		importNetworkExportJson(28, 1, db);
 		importNetworkExportJson(335, 1, db);
 		importNetworkExportJson(179, 1, db);
 		importNetworkExportJson(180, 1, db);
 		importNetworkExportJson(181, 1, db);		
+		
+		// importNetworkExportJson(342, 4055, db);
 		
 		db.close();	
 		
