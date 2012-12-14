@@ -56,7 +56,7 @@ public class MMNetworkImport {
 		DatabaseReader db = new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm");
 		
 		// output directly into model-elements github layout at same level:
-		//parentOutputDirectory = "../model-elements/examples/mm-networks";
+		parentOutputDirectory = "../model-elements/examples/mm-networks";
 		
 		importNetworkExportJson(28, 1, db);
 		importNetworkExportJson(335, 1, db);
