@@ -58,13 +58,15 @@ public class MMNetworkImport {
 		// output directly into model-elements github layout at same level:
 		parentOutputDirectory = "../model-elements/examples/mm-networks";
 				
-		importNetworkExportJson(28, 1, db);
-		importNetworkExportJson(335, 1, db);
-		importNetworkExportJson(179, 1, db);
-		importNetworkExportJson(180, 1, db);
-		importNetworkExportJson(181, 1, db);		
+//		// tiny test network
+//		importNetworkExportJson(28, 1, db);		
+//		importNetworkExportJson(179, 1, db);
+//		importNetworkExportJson(180, 1, db);
+//		importNetworkExportJson(181, 1, db);
+//		importNetworkExportJson(335, 1, db);		
 		
-		// importNetworkExportJson(342, 4055, db);
+		// from boris: example network with allocation matrices stored in DB (i15 ontario)
+		importNetworkExportJson(249, 4015, db);
 		
 		db.close();	
 		
@@ -87,8 +89,7 @@ public class MMNetworkImport {
 		JsonHandler.writeToFile(imported.getSplitRatioMap(), networkOutputDirectory + "/SplitRatioMap.json");
 					
 		Monitor.out("MM network " + nid + " written to directory " + dir.getCanonicalPath());
-		Monitor.out("");
-		
+		Monitor.out("");		
 		
 	}
 
