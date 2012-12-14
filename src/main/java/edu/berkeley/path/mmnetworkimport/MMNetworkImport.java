@@ -40,6 +40,8 @@ import edu.berkeley.path.model_elements.*;
  * @author amoylan
  */
 public class MMNetworkImport {
+	
+	private static String parentOutputDirectory = "output";
 
 	/**
 	 * Entry point: Script MM network import operations here and launch app.
@@ -53,11 +55,14 @@ public class MMNetworkImport {
 						
 		DatabaseReader db = new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm");
 		
+		// output directly into model-elements github layout at same level:
+		//parentOutputDirectory = "../model-elements/examples/mm-networks";
+		
 		importNetworkExportJson(28, 1, db);
 		importNetworkExportJson(335, 1, db);
 		importNetworkExportJson(179, 1, db);
 		importNetworkExportJson(180, 1, db);
-		importNetworkExportJson(181, 1, db);
+		importNetworkExportJson(181, 1, db);		
 		
 		db.close();	
 		
@@ -67,17 +72,17 @@ public class MMNetworkImport {
 		
 		ImportedNetwork imported = new ImportedNetwork(nid, cid, db);
 		
-		 // create output directory
-		String outputDirectory = "output/nid" + Integer.toString(nid);
-		File dir = new File(outputDirectory);
+		 // create output directory for this nid
+		String networkOutputDirectory = parentOutputDirectory + "/nid" + Integer.toString(nid);
+		File dir = new File(networkOutputDirectory);
 		dir.mkdirs();
 		
 		// write each model-elements object
-		JsonHandler.writeToFile(imported.getFreewayContextConfig(), outputDirectory + "/FreewayContextConfig.json");
-		JsonHandler.writeToFile(imported.getNetwork(), outputDirectory + "/Network.json");		
-		JsonHandler.writeToFile(imported.getFundamentalDiagramMap(), outputDirectory + "/FDMap.json");
-		JsonHandler.writeToFile(imported.getOriginDemandMap(), outputDirectory + "/DemandMap.json");
-		JsonHandler.writeToFile(imported.getSplitRatioMap(), outputDirectory + "/SplitRatioMap.json");
+		JsonHandler.writeToFile(imported.getFreewayContextConfig(), networkOutputDirectory + "/FreewayContextConfig.json");
+		JsonHandler.writeToFile(imported.getNetwork(), networkOutputDirectory + "/Network.json");		
+		JsonHandler.writeToFile(imported.getFundamentalDiagramMap(), networkOutputDirectory + "/FDMap.json");
+		JsonHandler.writeToFile(imported.getOriginDemandMap(), networkOutputDirectory + "/DemandMap.json");
+		JsonHandler.writeToFile(imported.getSplitRatioMap(), networkOutputDirectory + "/SplitRatioMap.json");
 					
 		Monitor.out("MM network " + nid + " written to directory " + dir.getCanonicalPath());
 		Monitor.out("");
