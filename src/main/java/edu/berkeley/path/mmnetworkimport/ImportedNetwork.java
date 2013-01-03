@@ -391,7 +391,6 @@ public class ImportedNetwork {
 			Sensor sensor = new Sensor();
 			sensor.setEntityId(Integer.toString(mmsensor.vdsID));
 			sensor.setHealthStatus(mmsensor.isValid() ? 1d : 0d);
-			sensor.setId(Integer.toString(mmsensor.ID));
 			sensor.setLaneNum((double) mmsensor.lane);
 			Pair<Link, Double> localLinkOffset = getLinkCellOffset(linkCellMap.get(mmsensor.link), mmsensor.offset, mmsensor.link.length);
 			sensor.setLinkId(localLinkOffset.getLeft().getId());
