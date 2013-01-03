@@ -59,16 +59,16 @@ public class MMNetworkImport {
 		parentOutputDirectory = "../model-elements/examples/mm-networks";
 				
 //		// smaller test networks
-//		importNetworkExportJson(28, 1, db);
-//		importNetworkExportJson(335, 1, db);
+		importNetworkExportJson(28, 1, db);
+		importNetworkExportJson(335, 1, db);
 		
 //		// selected T01T02 networks
-//		importNetworkExportJson(179, 1, db);
-//		importNetworkExportJson(181, 1, db);
+		importNetworkExportJson(179, 1, db);
+		importNetworkExportJson(181, 1, db);
 		importNetworkExportJson(183, 1, db);
 		
 //		// from boris: example network with allocation matrices stored in DB (i15 ontario)
-//		importNetworkExportJson(249, 4015, db);
+		importNetworkExportJson(249, 4015, db);
 		
 		db.close();	
 		
