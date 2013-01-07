@@ -414,6 +414,8 @@ public class ImportedNetwork {
 		EnkfNoiseParams mmEnKFParams = EnkfNoiseParams.getEnkfNoiseParamsFromDB(db, mm_cid);
 		freewayContextConfig.setAdditiveModelNoiseMean(mmEnKFParams.modelNoiseMean);
 		freewayContextConfig.setAdditiveModelNoiseStdDev(mmEnKFParams.modelNoiseStdev);
+		freewayContextConfig.setAdditiveVelocityFunctionNoiseMean(0d);
+		freewayContextConfig.setAdditiveVelocityFunctionNoiseStdDev(0d);
 		freewayContextConfig.setEnkfParams(EnKFParams.createWithMMDefaults());
 		freewayContextConfig.getEnkfParams().setModelNoiseMean(mmEnKFParams.modelNoiseMean);
 		freewayContextConfig.getEnkfParams().setModelNoiseStdev(mmEnKFParams.modelNoiseStdev);
