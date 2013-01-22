@@ -32,6 +32,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 // MM imports
 import calibration.LinkFluxFuncParams;
+import core.Coordinate;
 import core.DatabaseException;
 import core.DatabaseReader;
 import core.Monitor;
@@ -106,6 +107,9 @@ public class ImportedNetwork {
 			Node node = new Node();
 			node.setId((long) mmnode.id);
 			maxNodeId = Math.max(maxNodeId, mmnode.id);
+			node.setLatitude(mmnode.getNavteqNode().geom.lat);
+			node.setLongitude(mmnode.getNavteqNode().geom.lon);
+//			Monitor.out("Imported node at lat=" + node.getLatitude() + ", long=" + node.getLongitude() + ".");
 			node.setType("Freeway");
 			node.setName(Integer.toString(mmnode.id));
 			
@@ -140,6 +144,11 @@ public class ImportedNetwork {
 					endNode = new Node();
 					endNode.setId((long) ++uniqueNodeId);
 					endNode.setName(Integer.toString(uniqueNodeId) + " (near link " + linkid + ")");
+					// TODO: set correct lat/long for intermediate node
+					Coordinate interpolatedCoordinate = mmlink.getGeoMultiLine().getCoordinate((i + 1d) * cellLength);
+					endNode.setLatitude(interpolatedCoordinate.lat);
+					endNode.setLongitude(interpolatedCoordinate.lon);
+//					Monitor.out("Created new intermediate node at lat=" + endNode.getLatitude() + ", long=" + endNode.getLongitude() + ".");
 					endNode.setType("Freeway");
 					nodes.add(endNode);
 					intermediateNodes.add(endNode);
@@ -215,6 +224,8 @@ public class ImportedNetwork {
 			Node originNode = new Node();
 			originNode.setId((long) ++uniqueNodeId);
 			originNode.setName(Integer.toString(uniqueNodeId));
+//			originNode.setLatitude(null);
+//			originNode.setLongitude(null);
 			originNode.setType("Terminal");
 			
 			nodes.add(originNode);
@@ -259,6 +270,8 @@ public class ImportedNetwork {
 			Node terminalNode = new Node();
 			terminalNode.setId((long) ++uniqueNodeId);
 			terminalNode.setName(Integer.toString(uniqueNodeId));
+//			terminalNode.setLatitude(null);
+//			terminalNode.setLongitude(null);
 			terminalNode.setType("Terminal");
 			
 			nodes.add(terminalNode);
@@ -317,6 +330,7 @@ public class ImportedNetwork {
 				", imported from PostgreSQL by mm-network-import tool.");
 		network.setLinkList(links);		
 		network.setNodeList(nodes);		
+		network.setModstamp(System.currentTimeMillis());
 		network.resolveReferences();
 		
 		// create split ratio maps corresponding to allocation matrices
@@ -443,6 +457,7 @@ public class ImportedNetwork {
 		
 		SensorSet sensorSet = new SensorSet();
 		sensorSet.setSensorList(sensorList);
+		sensorSet.setModstamp(System.currentTimeMillis());
 		long sensorSetId = 10000 + mm_nid; // tentative attempt at something likely unique, check with alex
 		sensorSet.setId(sensorSetId);
 		sensorSet.setName(Long.toString(sensorSetId));
