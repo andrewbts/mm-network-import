@@ -167,7 +167,6 @@ public class ImportedNetwork {
 				link.setLength(cellLength);				
 				link.setSpeedLimit(speedLimit);								
 				link.setType("Freeway");
-				// per alex k:
 				link.setLaneOffset(0); 
 				link.setDetailLevel(1);
 								
@@ -195,7 +194,6 @@ public class ImportedNetwork {
 				fd.setCriticalSpeed(criticalSpeed);								
 				// derived quantity assuming smulder's flow model
 				fd.setCapacity(criticalSpeed * jamDensity * (1d - criticalSpeed / freeFlowSpeed));
-				// per alex k:
 				fd.setCapacityDrop(0d);
 				fd.setFreeFlowSpeedStd(0d);
 				fd.setCapacityStd(0d);
@@ -220,26 +218,27 @@ public class ImportedNetwork {
 		
 		// import sources as origin links, and import their capacity into a demand map				
 		for (netconfig.TrafficFlowSource mmsource : mmnetwork.getTrafficFlowSources()) {
+			
+			Node toNode = nodeMap.get(mmsource.node);
+			
 			// terminal source node
 			Node originNode = new Node();
 			originNode.setId((long) ++uniqueNodeId);
 			originNode.setName(Integer.toString(uniqueNodeId));
-//			originNode.setLatitude(null);
-//			originNode.setLongitude(null);
-			originNode.setType("Terminal");
-			
+			// use same lat/long as end node
+			originNode.setLatitude(toNode.getLatitude());
+			originNode.setLongitude(toNode.getLongitude());
+			originNode.setType("Terminal");			
 			nodes.add(originNode);
 			nodeMap.put(mmsource, originNode);
 			
 			// origin link
 			Link originLink = new Link();
-			originLink.setBegin(originNode);
-			Node toNode = nodeMap.get(mmsource.node);
+			originLink.setBegin(originNode);			
 			originLink.setEnd(toNode);
 			originLink.setId((long) ++uniqueLinkId);
 			originLink.setName(Integer.toString(uniqueLinkId));
 			originLink.setType("Freeway");
-			// per alex k:
 			originLink.setLaneOffset(0); 
 			originLink.setDetailLevel(1);
 			// not applicable for origin links:
@@ -266,20 +265,23 @@ public class ImportedNetwork {
 		
 		// import sinks as links and terminal nodes, and import their capacity into fundamental diagram map		
 		for (netconfig.TrafficFlowSink mmsink : mmnetwork.getTrafficFlowSinks()) {
+			
+			Node fromNode = nodeMap.get(mmsink.node);
+			
 			// terminal end node
 			Node terminalNode = new Node();
 			terminalNode.setId((long) ++uniqueNodeId);
 			terminalNode.setName(Integer.toString(uniqueNodeId));
-//			terminalNode.setLatitude(null);
-//			terminalNode.setLongitude(null);
+			// use same lat/long as from node 
+			terminalNode.setLatitude(fromNode.getLatitude());
+			terminalNode.setLongitude(fromNode.getLongitude());
 			terminalNode.setType("Terminal");
 			
 			nodes.add(terminalNode);
 			nodeMap.put(mmsink, terminalNode);
 			
 			// sink link
-			Link sinkLink = new Link();
-			Node fromNode = nodeMap.get(mmsink.node);
+			Link sinkLink = new Link();			
 			sinkLink.setBegin(fromNode);			
 			sinkLink.setEnd(terminalNode);						
 			sinkLink.setId((long) ++uniqueLinkId);
@@ -305,7 +307,6 @@ public class ImportedNetwork {
 			fd.setCongestionWaveSpeed(5.36448d);
 			// derived quantity assuming smulder's flow model
 			fd.setCapacity(18d * 0.124300808d * (1d - 18d / 20d));
-			// per alex k:
 			fd.setCapacityDrop(0d);
 			fd.setFreeFlowSpeedStd(0d);
 			fd.setCapacityStd(0d);
@@ -330,7 +331,6 @@ public class ImportedNetwork {
 				", imported from PostgreSQL by mm-network-import tool.");
 		network.setLinkList(links);		
 		network.setNodeList(nodes);		
-		network.setModstamp(System.currentTimeMillis());
 		network.resolveReferences();
 		
 		// create split ratio maps corresponding to allocation matrices
@@ -409,7 +409,7 @@ public class ImportedNetwork {
 			Pair<Link, Double> localLinkOffset = getLinkCellOffset(linkCellMap.get(mmsensor.link), mmsensor.offset, mmsensor.link.length);
 			sensor.setLinkId(localLinkOffset.getLeft().getId());
 			sensor.setLinkOffset(localLinkOffset.getRight());
-			sensor.setMeasurementFeedId("PeMS"); // per Alex
+			sensor.setMeasurementFeedId("PeMS");
 			sensor.setTypeEnum(SensorTypeEnum.LOOP);
 			
 			sensorList.add(sensor);			
@@ -457,8 +457,7 @@ public class ImportedNetwork {
 		
 		SensorSet sensorSet = new SensorSet();
 		sensorSet.setSensorList(sensorList);
-		sensorSet.setModstamp(System.currentTimeMillis());
-		long sensorSetId = 10000 + mm_nid; // tentative attempt at something likely unique, check with alex
+		long sensorSetId = 10000 + mm_nid; // something likely unique
 		sensorSet.setId(sensorSetId);
 		sensorSet.setName(Long.toString(sensorSetId));
 		sensorSet.setDescription("PeMS sensors for MM nid " + mm_nid + ", converted by mm-network-import");
