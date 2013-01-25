@@ -57,7 +57,7 @@ import edu.berkeley.path.model_elements.*;
  */
 public class ImportedNetwork {
 	
-	private final FreewayContextConfig config;	
+	private final RunConfig config;	
 	private final Network network;
 	private final FDMap fundamentalDiagramMap;
 	private final SplitRatioMap splitRatioMap;
@@ -418,7 +418,7 @@ public class ImportedNetwork {
 			
 		// create final model-elements objects
 		
-		config = new FreewayContextConfig();
+		config = new RunConfig();
 		config.setCTMTypeEnum(CTMType.VELOCITY);	
 		config.setEnsembleSize(150);
 		config.setDt(Duration.fromSeconds(mmnetwork.attributes.getReal("highway_timestep")));
@@ -587,7 +587,7 @@ public class ImportedNetwork {
 	/**
 	 * @return Freeway CTM+EnKF configuration representing corresponding MM settings 
 	 */
-	public FreewayContextConfig getConfig() {
+	public RunConfig getConfig() {
 		return config;
 	}
 	
