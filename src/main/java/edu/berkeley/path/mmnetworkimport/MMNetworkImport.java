@@ -84,7 +84,7 @@ public class MMNetworkImport {
 		dir.mkdirs();
 		
 		// write each model-elements object
-		JsonHandler.writeToFile(imported.getFreewayContextConfig(), networkOutputDirectory + "/FreewayContextConfig.json");
+		JsonHandler.writeToFile(imported.getConfig(), networkOutputDirectory + "/FreewayContextConfig.json");
 		JsonHandler.writeToFile(imported.getNetwork(), networkOutputDirectory + "/Network.json");		
 		JsonHandler.writeToFile(imported.getFundamentalDiagramMap(), networkOutputDirectory + "/FDMap.json");
 		JsonHandler.writeToFile(imported.getOriginDemandMap(), networkOutputDirectory + "/DemandMap.json");

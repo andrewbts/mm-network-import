@@ -50,7 +50,6 @@ import datatypes.State;
 
 import edu.berkeley.path.model_elements.*;
 
-
 /**
  * A collection of model-elements data structures constructed
  * from an MM network.
@@ -58,7 +57,7 @@ import edu.berkeley.path.model_elements.*;
  */
 public class ImportedNetwork {
 	
-	private final FreewayContextConfig freewayContextConfig;	
+	private final FreewayContextConfig config;	
 	private final Network network;
 	private final FDMap fundamentalDiagramMap;
 	private final SplitRatioMap splitRatioMap;
@@ -419,41 +418,48 @@ public class ImportedNetwork {
 			
 		// create final model-elements objects
 		
-		freewayContextConfig = new FreewayContextConfig();
-		freewayContextConfig.setCTMTypeEnum(CTMType.VELOCITY);	
-		freewayContextConfig.setEnsembleSize(150);
-		freewayContextConfig.setDt(Duration.fromSeconds(mmnetwork.attributes.getReal("highway_timestep")));
-		freewayContextConfig.setDtOutput(Duration.fromSeconds(
+		config = new FreewayContextConfig();
+		config.setCTMTypeEnum(CTMType.VELOCITY);	
+		config.setEnsembleSize(150);
+		config.setDt(Duration.fromSeconds(mmnetwork.attributes.getReal("highway_timestep")));
+		config.setDtOutput(Duration.fromSeconds(
 				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // assuming these are the same thing
 		EnkfNoiseParams mmEnKFParams = EnkfNoiseParams.getEnkfNoiseParamsFromDB(db, mm_cid);
-		freewayContextConfig.setAdditiveModelNoiseMean(mmEnKFParams.modelNoiseMean);
-		freewayContextConfig.setAdditiveModelNoiseStdDev(mmEnKFParams.modelNoiseStdev);
-		freewayContextConfig.setAdditiveVelocityFunctionNoiseMean(0d);
-		freewayContextConfig.setAdditiveVelocityFunctionNoiseStdDev(0d);
-		freewayContextConfig.setEnkfParams(EnKFParams.createWithMMDefaults());
-		freewayContextConfig.getEnkfParams().setModelNoiseMean(mmEnKFParams.modelNoiseMean);
-		freewayContextConfig.getEnkfParams().setModelNoiseStdev(mmEnKFParams.modelNoiseStdev);
-		freewayContextConfig.getEnkfParams().setNavteqNoiseMean(mmEnKFParams.navteqNoiseMean);
-		freewayContextConfig.getEnkfParams().setNavteqNoiseStdev(mmEnKFParams.navteqNoiseStdev);
-		freewayContextConfig.getEnkfParams().setTelenavNoiseMean(mmEnKFParams.telenavNoiseMean);
-		freewayContextConfig.getEnkfParams().setTelenavNoiseStdev(mmEnKFParams.telenavNoiseStdev);
-		freewayContextConfig.setInitialDensityFraction(0.01d);
-		freewayContextConfig.setEnkfTypeEnum(EnKFType.GLOBALJAMA);
-		freewayContextConfig.setFDTypeEnum(FDTypeEnum.SMULDERS);
-		freewayContextConfig.setRunModeEnum(RunMode.HISTORICAL);
-		freewayContextConfig.setId(0L);
-		freewayContextConfig.setName("MM nid " + Integer.toString(mm_nid));
+		config.setAdditiveModelNoiseMean(mmEnKFParams.modelNoiseMean);
+		config.setAdditiveModelNoiseStdDev(mmEnKFParams.modelNoiseStdev);
+		config.setAdditiveVelocityFunctionNoiseMean(0d);
+		config.setAdditiveVelocityFunctionNoiseStdDev(0d);
+		config.setEnkfParams(EnKFParams.createWithMMDefaults());
+		config.getEnkfParams().setModelNoiseMean(mmEnKFParams.modelNoiseMean);
+		config.getEnkfParams().setModelNoiseStdev(mmEnKFParams.modelNoiseStdev);
+		config.getEnkfParams().setNavteqNoiseMean(mmEnKFParams.navteqNoiseMean);
+		config.getEnkfParams().setNavteqNoiseStdev(mmEnKFParams.navteqNoiseStdev);
+		config.getEnkfParams().setTelenavNoiseMean(mmEnKFParams.telenavNoiseMean);
+		config.getEnkfParams().setTelenavNoiseStdev(mmEnKFParams.telenavNoiseStdev);
+		config.setInitialDensityFraction(0.01d);
+		config.setEnkfTypeEnum(EnKFType.GLOBALJAMA);
+		config.setFDTypeEnum(FDTypeEnum.SMULDERS);
+		config.setRunModeEnum(RunMode.HISTORICAL);
+		config.setId(0L);
+		config.setName("MM nid " + Integer.toString(mm_nid));
 		Time startTime = mmnetwork.attributes.getTimestamp("starttime");
 		Long startMilliseconds = (startTime == null ? 0 : startTime.getTimeInMillis());
-		freewayContextConfig.setTimeBegin(new DateTime(startMilliseconds));
+		config.setTimeBegin(new DateTime(startMilliseconds));
 		Time endTime = mmnetwork.attributes.getTimestamp("endtime");
 		Long endMilliseconds = (endTime == null ? 0 : endTime.getTimeInMillis());
-		freewayContextConfig.setTimeEnd(new DateTime(endMilliseconds));
-		freewayContextConfig.setWorkflowEnum(Workflow.ESTIMATION);		
-		freewayContextConfig.setFeedEnum(Feed.PEMS);
-		freewayContextConfig.setInitialEnsembleState(null);
-		freewayContextConfig.setInitialState(null);
-		freewayContextConfig.setInitialStateUncertainty(0d);
+		config.setTimeEnd(new DateTime(endMilliseconds));
+		config.setWorkflowEnum(Workflow.ESTIMATION);		
+		config.setFeedEnum(Feed.PEMS);
+		config.setInitialEnsembleState(null);
+		config.setInitialState(null);
+		config.setInitialStateUncertainty(0d);
+		config.setReportDirectory("reports");
+		config.setReportEnsembleAfterCTM(true);
+		config.setReportEnsembleAfterEnKF(false);
+		config.setReportStatisticsAfterCTM(false);
+		config.setReportStatisticsAfterEnKF(true);
+		config.setReportToDB(true);
+		config.setReportToDirectory(false);
 		
 		SensorSet sensorSet = new SensorSet();
 		sensorSet.setSensorList(sensorList);
@@ -461,12 +467,12 @@ public class ImportedNetwork {
 		sensorSet.setId(sensorSetId);
 		sensorSet.setName(Long.toString(sensorSetId));
 		sensorSet.setDescription("PeMS sensors for MM nid " + mm_nid + ", converted by mm-network-import");
-		freewayContextConfig.setSensorSet(sensorSet);
+		config.setSensorSet(sensorSet);
 		
 		Monitor.out("Created config with duration " +  
 				((endMilliseconds.doubleValue() - startMilliseconds.doubleValue()) / 1000d) + " sec, " +
-				"time step " + freewayContextConfig.getDt().getMilliseconds().doubleValue() / 1000d + " sec, and " +
-				"output time step " + freewayContextConfig.getDtOutput().getMilliseconds().doubleValue() / 1000d + " sec.");
+				"time step " + config.getDt().getMilliseconds().doubleValue() / 1000d + " sec, and " +
+				"output time step " + config.getDtOutput().getMilliseconds().doubleValue() / 1000d + " sec.");
 		
 		originDemandMap = new DemandMap();
 		originDemandMap.setFlowMap(originDemandFlowMap);
@@ -581,8 +587,8 @@ public class ImportedNetwork {
 	/**
 	 * @return Freeway CTM+EnKF configuration representing corresponding MM settings 
 	 */
-	public FreewayContextConfig getFreewayContextConfig() {
-		return freewayContextConfig;
+	public FreewayContextConfig getConfig() {
+		return config;
 	}
 	
 }
