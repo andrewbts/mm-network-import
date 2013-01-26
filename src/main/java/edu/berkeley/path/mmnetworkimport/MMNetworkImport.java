@@ -78,7 +78,7 @@ public class MMNetworkImport {
 		
 		ImportedNetwork imported = new ImportedNetwork(nid, cid, db);
 		
-		 // create output directory for this nid
+		// create output directory for this nid
 		String networkOutputDirectory = parentOutputDirectory + "/nid" + Integer.toString(nid);
 		File dir = new File(networkOutputDirectory);
 		dir.mkdirs();
