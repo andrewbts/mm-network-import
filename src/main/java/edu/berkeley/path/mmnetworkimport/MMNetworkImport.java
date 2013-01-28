@@ -72,6 +72,8 @@ public class MMNetworkImport {
 		
 		db.close();	
 		
+		Monitor.out("mm-network-import all done.\n");
+		
 	}
 	
 	private static void importNetworkExportJson(int nid, int cid, DatabaseReader db) throws DatabaseException, NetconfigException, IOException {

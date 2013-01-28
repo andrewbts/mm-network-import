@@ -168,6 +168,7 @@ public class ImportedNetwork {
 				link.setType("Freeway");
 				link.setLaneOffset(0); 
 				link.setDetailLevel(1);
+				link.setPointList(new ArrayList<Point>());
 								
 				links.add(link);				
 				cellLinks.add(link);
@@ -244,6 +245,7 @@ public class ImportedNetwork {
 			originLink.setLength(0d);
 			originLink.setLaneCount(0d); 
 			originLink.setSpeedLimit(0d);
+			originLink.setPointList(new ArrayList<Point>());
 							
 			links.add(originLink);
 			linkCellMap.put(mmsource, createSingletonList(originLink));
@@ -293,6 +295,7 @@ public class ImportedNetwork {
 			// not applicable for sink links:
 			sinkLink.setLaneOffset(0);
 			sinkLink.setDetailLevel(1);
+			sinkLink.setPointList(new ArrayList<Point>());
 			
 			links.add(sinkLink);
 			linkCellMap.put(mmsink, createSingletonList(sinkLink));
