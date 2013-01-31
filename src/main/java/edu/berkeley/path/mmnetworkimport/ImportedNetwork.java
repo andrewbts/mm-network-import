@@ -478,13 +478,13 @@ public class ImportedNetwork {
 				"output time step " + config.getDtOutput().getMilliseconds().doubleValue() / 1000d + " sec.");
 		
 		originDemandMap = new DemandMap();
-		originDemandMap.setFlowMap(originDemandFlowMap);
+		originDemandMap.setFlow(originDemandFlowMap);
 		
 		fundamentalDiagramMap = new FDMap();
 		fundamentalDiagramMap.setFdMap(linkFundamentalDiagramMap);
 		
 		splitRatioMap = new SplitRatioMap();		
-		splitRatioMap.setRatioMap(nodeSplitRatioMap );
+		splitRatioMap.setRatio(nodeSplitRatioMap );
 		
 		Monitor.out("");
 				
