@@ -424,17 +424,17 @@ public class ImportedNetwork {
 		config = new RunConfig();
 		config.setCTMTypeEnum(CTMType.VELOCITY);	
 		config.setEnsembleSize(150);
-		config.setDt(Duration.fromSeconds(mmnetwork.attributes.getReal("highway_timestep")));
+		config.setDtCTM(Duration.fromSeconds(mmnetwork.attributes.getReal("highway_timestep")));
+		config.setDtEnKF(Duration.fromSeconds(
+				mmnetwork.attributes.getReal("highway_dataassimilation_timestep")));
 		config.setDtOutput(Duration.fromSeconds(
-				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // assuming these are the same thing
+				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // using data assimilation time step as reporting time step too
 		EnkfNoiseParams mmEnKFParams = EnkfNoiseParams.getEnkfNoiseParamsFromDB(db, mm_cid);
 		config.setAdditiveModelNoiseMean(mmEnKFParams.modelNoiseMean);
 		config.setAdditiveModelNoiseStdDev(mmEnKFParams.modelNoiseStdev);
 		config.setAdditiveVelocityFunctionNoiseMean(0d);
 		config.setAdditiveVelocityFunctionNoiseStdDev(0d);
 		config.setEnkfParams(EnKFParams.createWithMMDefaults());
-		config.getEnkfParams().setModelNoiseMean(mmEnKFParams.modelNoiseMean);
-		config.getEnkfParams().setModelNoiseStdev(mmEnKFParams.modelNoiseStdev);
 		config.getEnkfParams().setNavteqNoiseMean(mmEnKFParams.navteqNoiseMean);
 		config.getEnkfParams().setNavteqNoiseStdev(mmEnKFParams.navteqNoiseStdev);
 		config.getEnkfParams().setTelenavNoiseMean(mmEnKFParams.telenavNoiseMean);
@@ -474,7 +474,8 @@ public class ImportedNetwork {
 		
 		Monitor.out("Created config with duration " +  
 				((endMilliseconds.doubleValue() - startMilliseconds.doubleValue()) / 1000d) + " sec, " +
-				"time step " + config.getDt().getMilliseconds().doubleValue() / 1000d + " sec, and " +
+				"CTM time step " + config.getDtCTM().getMilliseconds().doubleValue() / 1000d + " sec, " +
+				"EnKF time step " + config.getDtEnKF().getMilliseconds().doubleValue() / 1000d + " sec, and " +
 				"output time step " + config.getDtOutput().getMilliseconds().doubleValue() / 1000d + " sec.");
 		
 		originDemandMap = new DemandMap();
