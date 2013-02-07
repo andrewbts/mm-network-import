@@ -427,6 +427,8 @@ public class ImportedNetwork {
 		config.setDtCTM(Duration.fromSeconds(mmnetwork.attributes.getReal("highway_timestep")));
 		config.setDtEnKF(Duration.fromSeconds(
 				mmnetwork.attributes.getReal("highway_dataassimilation_timestep")));
+		config.setLiveModeLag(Duration.fromSeconds(
+				2.0d * mmnetwork.attributes.getReal("highway_dataassimilation_timestep")));
 		config.setDtOutput(Duration.fromSeconds(
 				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // using data assimilation time step as reporting time step too
 		EnkfNoiseParams mmEnKFParams = EnkfNoiseParams.getEnkfNoiseParamsFromDB(db, mm_cid);
