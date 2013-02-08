@@ -51,26 +51,61 @@ public class MMNetworkImport {
 	 * @throws DatabaseException 
 	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws DatabaseException, NetconfigException, IOException {
-						
-		DatabaseReader db = new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm");
-		
+	public static void main(String[] args) throws DatabaseException, NetconfigException, IOException {				
+				
 		// output directly into model-elements github layout at same level:
 		parentOutputDirectory = "../model-elements/examples/mm-networks";
-				
-//		// smaller test networks
-		importNetworkExportJson(28, 1, db);
-		importNetworkExportJson(335, 1, db);
 		
-//		// selected T01T02 networks
-		importNetworkExportJson(179, 1, db);
-		importNetworkExportJson(181, 1, db);
-		importNetworkExportJson(183, 1, db);
+		// import from mmlivedb1, or from mmdevdb1?
+		boolean importFromLive = false;
 		
-//		// from boris: example network with allocation matrices stored in DB (i15 ontario)
-		importNetworkExportJson(249, 4015, db);
-		
-		db.close();	
+		if (importFromLive) {
+			
+			DatabaseReader db = new DatabaseReader("localhost", 5432, "live", "highway", "highwaymm");
+					
+	//		// smaller test networks
+			importNetworkExportJson(28, 1, db);
+			importNetworkExportJson(335, 1, db);
+			
+	//		// selected T01T02 networks
+			importNetworkExportJson(179, 1, db);
+			importNetworkExportJson(181, 1, db);
+			importNetworkExportJson(183, 1, db);
+			
+	//		// from boris: example network with allocation matrices stored in DB (i15 ontario)
+			importNetworkExportJson(249, 4015, db);
+			
+			db.close();
+		}
+		else {
+			
+			DatabaseReader db = new DatabaseReader("localhost", 5432, "dev", "highway", "highwaymm");
+			
+			// 880 networks
+			importNetworkExportJson(344, 9174, db);
+			importNetworkExportJson(345, 9175, db);
+			importNetworkExportJson(346, 9176, db);
+			importNetworkExportJson(343, 9173, db);
+			importNetworkExportJson(342, 9172, db);
+			importNetworkExportJson(347, 9177, db);
+			
+			// Ontario networks
+			importNetworkExportJson(372, 9201, db);
+			importNetworkExportJson(373, 9202, db);
+			importNetworkExportJson(374, 9203, db);
+			importNetworkExportJson(371, 9203, db);
+			importNetworkExportJson(370, 9206, db);
+			importNetworkExportJson(375, 9204, db);
+			importNetworkExportJson(376, 9205, db);
+			
+			// Victorville networks
+//			importNetworkExportJson(382, ????, db);
+//			importNetworkExportJson(383, ????, db);
+//			importNetworkExportJson(384, ????, db);
+					
+			db.close();	
+			
+		}
 		
 		Monitor.out("mm-network-import all done.\n");
 		
