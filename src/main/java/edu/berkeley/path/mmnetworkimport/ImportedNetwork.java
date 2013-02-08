@@ -422,10 +422,12 @@ public class ImportedNetwork {
 		// create final model-elements objects
 		
 		config = new RunConfig();
+		config.setEnkfConfig(EnKFConfig.createWithMMDefaults());
+		config.setRunModeEnum(RunMode.HISTORICAL);
 		config.setCTMTypeEnum(CTMType.VELOCITY);	
 		config.setEnsembleSize(150);
 		config.setDtCTM(Duration.fromSeconds(mmnetwork.attributes.getReal("highway_timestep")));
-		config.setDtEnKF(Duration.fromSeconds(
+		config.getEnkfConfig().setDtEnKF(Duration.fromSeconds(
 				mmnetwork.attributes.getReal("highway_dataassimilation_timestep")));
 		config.setLiveModeLag(Duration.fromSeconds(
 				2.0d * mmnetwork.attributes.getReal("highway_dataassimilation_timestep")));
@@ -433,18 +435,20 @@ public class ImportedNetwork {
 				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // using data assimilation time step as reporting time step too
 		EnkfNoiseParams mmEnKFParams = EnkfNoiseParams.getEnkfNoiseParamsFromDB(db, mm_cid);
 		config.setAdditiveModelNoiseMean(mmEnKFParams.modelNoiseMean);
-		config.setAdditiveModelNoiseStdDev(mmEnKFParams.modelNoiseStdev);
-		config.setAdditiveVelocityFunctionNoiseMean(0d);
-		config.setAdditiveVelocityFunctionNoiseStdDev(0d);
-		config.setEnkfParams(EnKFParams.createWithMMDefaults());
-		config.getEnkfParams().setNavteqNoiseMean(mmEnKFParams.navteqNoiseMean);
-		config.getEnkfParams().setNavteqNoiseStdev(mmEnKFParams.navteqNoiseStdev);
-		config.getEnkfParams().setTelenavNoiseMean(mmEnKFParams.telenavNoiseMean);
-		config.getEnkfParams().setTelenavNoiseStdev(mmEnKFParams.telenavNoiseStdev);
-		config.setInitialDensityFraction(0.01d);
-		config.setEnkfTypeEnum(EnKFType.GLOBALJAMA);
+		config.setAdditiveModelNoiseStdDev(mmEnKFParams.modelNoiseStdev);				
+		config.getEnkfConfig().setNavteqNoiseMean(mmEnKFParams.navteqNoiseMean);
+		config.getEnkfConfig().setNavteqNoiseStdev(mmEnKFParams.navteqNoiseStdev);
+		config.getEnkfConfig().setTelenavNoiseMean(mmEnKFParams.telenavNoiseMean);
+		config.getEnkfConfig().setTelenavNoiseStdev(mmEnKFParams.telenavNoiseStdev);
+		config.getEnkfConfig().setEnkfTypeEnum(EnKFType.GLOBALJAMA);
+		config.getEnkfConfig().setIncludePeMS(true);
+		config.getEnkfConfig().setIncludeNavteq(false);
+		config.getEnkfConfig().setIncludeTelenav(false);
+		config.getEnkfConfig().setProbeProbabilityThreshold(0.7d);
+		config.setInitialDensityFraction(0.01d);		
 		config.setFDTypeEnum(FDTypeEnum.SMULDERS);
-		config.setRunModeEnum(RunMode.HISTORICAL);
+		config.setAdditiveVelocityFunctionNoiseMean(0d);
+		config.setAdditiveVelocityFunctionNoiseStdDev(0d);		
 		config.setId(0L);
 		config.setName("MM nid " + Integer.toString(mm_nid));
 		Time startTime = mmnetwork.attributes.getTimestamp("starttime");
@@ -454,7 +458,6 @@ public class ImportedNetwork {
 		Long endMilliseconds = (endTime == null ? 0 : endTime.getTimeInMillis());
 		config.setTimeEnd(new DateTime(endMilliseconds));
 		config.setWorkflowEnum(Workflow.ESTIMATION);		
-		config.setFeedEnum(Feed.PEMS);
 		config.setInitialEnsembleState(null);
 		config.setInitialState(null);
 		config.setInitialStateUncertainty(0d);
@@ -477,7 +480,7 @@ public class ImportedNetwork {
 		Monitor.out("Created config with duration " +  
 				((endMilliseconds.doubleValue() - startMilliseconds.doubleValue()) / 1000d) + " sec, " +
 				"CTM time step " + config.getDtCTM().getMilliseconds().doubleValue() / 1000d + " sec, " +
-				"EnKF time step " + config.getDtEnKF().getMilliseconds().doubleValue() / 1000d + " sec, and " +
+				"EnKF time step " + config.getEnkfConfig().getDtEnKF().getMilliseconds().doubleValue() / 1000d + " sec, and " +
 				"output time step " + config.getDtOutput().getMilliseconds().doubleValue() / 1000d + " sec.");
 		
 		originDemandMap = new DemandMap();
