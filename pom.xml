@@ -61,16 +61,6 @@
 		</dependency>
 		<dependency>
 			<groupId>edu.berkeley.path</groupId>
-			<artifactId>model-base</artifactId>
-			<version>0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>edu.berkeley.path</groupId>
-			<artifactId>model-mock</artifactId>
-			<version>0.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>edu.berkeley.path</groupId>
 			<artifactId>model-elements</artifactId>
 			<version>0.1-SNAPSHOT</version>
 		</dependency>
