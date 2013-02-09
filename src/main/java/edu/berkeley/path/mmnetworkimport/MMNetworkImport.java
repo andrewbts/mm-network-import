@@ -57,7 +57,7 @@ public class MMNetworkImport {
 		parentOutputDirectory = "../model-elements/examples/mm-networks";
 		
 		// import from mmlivedb1, or from mmdevdb1?
-		boolean importFromLive = false;
+		boolean importFromLive = true;
 		
 		if (importFromLive) {
 			
@@ -122,6 +122,7 @@ public class MMNetworkImport {
 		
 		// write each model-elements object
 		JsonHandler.writeToFile(imported.getConfig(), networkOutputDirectory + "/RunConfig.json");
+		JsonHandler.writeToFile(imported.getSensorSet(), networkOutputDirectory + "/SensorSet.json");
 		JsonHandler.writeToFile(imported.getNetwork(), networkOutputDirectory + "/Network.json");		
 		JsonHandler.writeToFile(imported.getFundamentalDiagramMap(), networkOutputDirectory + "/FDMap.json");
 		JsonHandler.writeToFile(imported.getOriginDemandMap(), networkOutputDirectory + "/DemandMap.json");

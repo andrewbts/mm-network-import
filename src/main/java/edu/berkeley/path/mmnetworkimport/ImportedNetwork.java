@@ -62,7 +62,8 @@ public class ImportedNetwork {
 	private final FDMap fundamentalDiagramMap;
 	private final SplitRatioMap splitRatioMap;
 	private final DemandMap originDemandMap;	
-
+	private final SensorSet sensorSet;
+		
 	/**
 	 * Import network corresponding to the specified MM nid.
 	 * @param mm_nid MM network table ID
@@ -469,13 +470,12 @@ public class ImportedNetwork {
 		config.setReportToDB(true);
 		config.setReportToDirectory(false);
 		
-		SensorSet sensorSet = new SensorSet();
+		sensorSet = new SensorSet();
 		sensorSet.setSensorList(sensorList);
 		long sensorSetId = 10000 + mm_nid; // something likely unique
 		sensorSet.setId(sensorSetId);
 		sensorSet.setName(Long.toString(sensorSetId));
 		sensorSet.setDescription("PeMS sensors for MM nid " + mm_nid + ", converted by mm-network-import");
-		config.setSensorSet(sensorSet);
 		
 		Monitor.out("Created config with duration " +  
 				((endMilliseconds.doubleValue() - startMilliseconds.doubleValue()) / 1000d) + " sec, " +
@@ -599,5 +599,9 @@ public class ImportedNetwork {
 	public RunConfig getConfig() {
 		return config;
 	}
-	
+
+	public SensorSet getSensorSet() {
+		return sensorSet;
+	}
+
 }
