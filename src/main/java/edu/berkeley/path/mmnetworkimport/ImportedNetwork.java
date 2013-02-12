@@ -49,6 +49,7 @@ import flowmodel.FlowModelNetwork;
 import datatypes.State;
 
 import edu.berkeley.path.model_elements.*;
+import edu.berkeley.path.model_elements_base.EstimationForecastConfig;
 
 /**
  * A collection of model-elements data structures constructed
@@ -423,7 +424,7 @@ public class ImportedNetwork {
 		// create final model-elements objects
 		
 		config = new RunConfig();
-		config.setEnkfConfig(EnKFConfig.createWithMMDefaults());
+		config.setEnkfConfig(EnKFConfig.createWithMMDefaults());		
 		config.setRunModeEnum(RunMode.HISTORICAL);
 		config.setCTMTypeEnum(CTMType.VELOCITY);	
 		config.setEnsembleSize(150);
@@ -446,6 +447,10 @@ public class ImportedNetwork {
 		config.getEnkfConfig().setIncludeNavteq(false);
 		config.getEnkfConfig().setIncludeTelenav(false);
 		config.getEnkfConfig().setProbeProbabilityThreshold(0.7d);
+		config.setEstimationForecastConfig(new EstimationForecastConfig());
+		config.getEstimationForecastConfig().setForecastDuration(Duration.fromMilliseconds(1000 * 60 * 60 * 2)); // 2 hours
+		config.getEstimationForecastConfig().setDtEstimationForecastSpinoff(Duration.fromMilliseconds(1000 * 60)); // 1 minute
+		config.getEstimationForecastConfig().setDtEstimationForecastReport(Duration.fromMilliseconds(1000 * 60 * 5)); // 5 minutes
 		config.setInitialDensityFraction(0.01d);		
 		config.setFDTypeEnum(FDTypeEnum.SMULDERS);
 		config.setAdditiveVelocityFunctionNoiseMean(0d);
@@ -467,6 +472,7 @@ public class ImportedNetwork {
 		config.setReportEnsembleAfterEnKF(false);
 		config.setReportStatisticsAfterCTM(false);
 		config.setReportStatisticsAfterEnKF(true);
+		config.setReportStatisticsHistory(false);
 		config.setReportToDB(true);
 		config.setReportToDirectory(false);
 		

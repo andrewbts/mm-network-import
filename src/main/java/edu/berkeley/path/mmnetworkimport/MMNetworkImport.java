@@ -57,7 +57,7 @@ public class MMNetworkImport {
 		parentOutputDirectory = "../model-elements/examples/mm-networks";
 		
 		// import from mmlivedb1, or from mmdevdb1?
-		boolean importFromLive = true;
+		boolean importFromLive = false;
 		
 		if (importFromLive) {
 			
