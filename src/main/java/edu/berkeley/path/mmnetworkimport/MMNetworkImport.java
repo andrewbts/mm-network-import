@@ -101,7 +101,7 @@ public class MMNetworkImport {
 			// Victorville networks
 //			importNetworkExportJson(382, ????, db);
 //			importNetworkExportJson(383, ????, db);
-//			importNetworkExportJson(384, ????, db);
+			importNetworkExportJson(384, 40005, db);
 					
 			db.close();	
 			
