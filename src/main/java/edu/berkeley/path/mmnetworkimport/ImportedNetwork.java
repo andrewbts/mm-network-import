@@ -163,14 +163,16 @@ public class ImportedNetwork {
 				maxLinkId = Math.max(maxLinkId, linkid);
 				link.setName(Integer.toString(linkid));
 				// use center of this cell as the offset to estimate lane count:
-				double cellCenterOffset = (i + 0.5d) * cellLength; 
+				double cellBeginOffset = i * cellLength;
+				double cellCenterOffset = (i + 0.5d) * cellLength;
+				double cellEndOffset = (i + 1d) * cellLength;
 				link.setLaneCount((double) mmlink.getNumLanesAtOffset((float) cellCenterOffset));				
 				link.setLength(cellLength);				
 				link.setSpeedLimit(speedLimit);								
 				link.setType("Freeway");
 				link.setLaneOffset(0); 
 				link.setDetailLevel(1);
-				link.setPointList(new ArrayList<Point>());
+				link.setPointList(getCellGeometryPointList(mmlink, cellBeginOffset, cellEndOffset));
 								
 				links.add(link);				
 				cellLinks.add(link);
@@ -502,6 +504,22 @@ public class ImportedNetwork {
 				
 	}
 	
+	/**
+	 * Get cell geometry from MM link geometry as a list of model-elements Points.
+	 * @throws NetconfigException 
+	 */
+	private List<Point> getCellGeometryPointList(ModelGraphLink mmlink, double cellBeginOffset, double cellEndOffset) throws NetconfigException {
+		Coordinate[] mmcoords = mmlink.getGeoMultiLinePartial(cellBeginOffset, cellEndOffset).getCoordinates();
+		List<Point> pointList = new ArrayList<Point>(mmcoords.length);
+		for (Coordinate coord : mmcoords) {
+			Point point = new Point();
+			point.setLatitude(coord.lat);
+			point.setLongitude(coord.lon);
+			pointList.add(point);
+		}
+		return pointList;
+	}
+
 	/**
 	 * Split ratio map out-link-id -> vehicle-type -> ratio, 
 	 * for a single row of allocation matrix.
