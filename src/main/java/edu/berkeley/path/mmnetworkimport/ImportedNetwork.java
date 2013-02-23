@@ -439,7 +439,8 @@ public class ImportedNetwork {
 				mmnetwork.attributes.getReal("highway_dataassimilation_timestep"))); // using data assimilation time step as reporting time step too
 		EnkfNoiseParams mmEnKFParams = EnkfNoiseParams.getEnkfNoiseParamsFromDB(db, mm_cid);
 		config.setAdditiveModelNoiseMean(mmEnKFParams.modelNoiseMean);
-		config.setAdditiveModelNoiseStdDev(mmEnKFParams.modelNoiseStdev);				
+		config.setAdditiveModelNoiseStdDev(mmEnKFParams.modelNoiseStdev);	
+		config.getEnkfConfig().setPifRunId(111999); // per Bill
 		config.getEnkfConfig().setNavteqNoiseMean(mmEnKFParams.navteqNoiseMean);
 		config.getEnkfConfig().setNavteqNoiseStdev(mmEnKFParams.navteqNoiseStdev);
 		config.getEnkfConfig().setTelenavNoiseMean(mmEnKFParams.telenavNoiseMean);
@@ -449,6 +450,7 @@ public class ImportedNetwork {
 		config.getEnkfConfig().setIncludeNavteq(false);
 		config.getEnkfConfig().setIncludeTelenav(false);
 		config.getEnkfConfig().setProbeProbabilityThreshold(0.7d);
+		config.getEnkfConfig().setProbeSpeedThreshold(1.0d);
 		config.setEstimationForecastConfig(new EstimationForecastConfig());
 		config.getEstimationForecastConfig().setForecastDuration(Duration.fromMilliseconds(1000 * 60 * 60 * 2)); // 2 hours
 		config.getEstimationForecastConfig().setDtEstimationForecastSpinoff(Duration.fromMilliseconds(1000 * 60)); // 1 minute
