@@ -86,7 +86,7 @@ public class MMNetworkImport {
 			importNetworkExportJson(345, 9175, db);
 			importNetworkExportJson(346, 9176, db);
 			importNetworkExportJson(343, 9173, db);
-			importNetworkExportJson(342, 9172, db);
+			importNetworkExportJson(342, 9162, db);
 			importNetworkExportJson(347, 9177, db);
 			
 			// Ontario networks
