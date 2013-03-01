@@ -190,7 +190,7 @@ public class ImportedNetwork {
 				// hard coded default values from MM				
 				if (shockSpeed == null) shockSpeed = 5.36448; 
 				if (freeFlowSpeed == null) freeFlowSpeed = mmlink.getAverageSpeedLimit().doubleValue();
-				if (jamDensity == null) jamDensity = 0.124300808 * link.getLaneCount();
+				if (jamDensity == null) jamDensity = 0.124300808;
 				if (criticalSpeed == null) criticalSpeed = Math.min(26d, freeFlowSpeed - 2d); 
 				fd.setCongestionWaveSpeed(Math.abs(shockSpeed));
 				fd.setFreeFlowSpeed(freeFlowSpeed);				
